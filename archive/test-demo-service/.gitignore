@@ -1,0 +1,8 @@
+bin/
+*.exe
+*.out
+.DS_Store
+.env.local
+.env
+coverage.out
+vendor/

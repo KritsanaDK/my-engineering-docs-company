@@ -1,0 +1,63 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🚀 Launch Server (Prompt Select Env)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/server/main.go",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/${input:selectEnvFile}",
+            "showLog": true
+        },
+        {
+            "name": "🌐 Launch Server (UAT-ISV)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/server/main.go",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env.local",
+            "showLog": true
+        },
+        {
+            "name": "💻 Launch Server (Local Dev)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/server/main.go",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env.dev",
+            "showLog": true
+        },
+        {
+            "name": "🧪 Debug Current Test",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env.local",
+            "showLog": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "selectEnvFile",
+            "type": "pickString",
+            "description": "Select Environment Configuration to Launch",
+            "options": [
+                {
+                    "label": "🌐 UAT-ISV (.env.local)",
+                    "value": ".env.local"
+                },
+                {
+                    "label": "💻 Local Development (.env.dev)",
+                    "value": ".env.dev"
+                }
+            ],
+            "default": ".env.local"
+        }
+    ]
+}

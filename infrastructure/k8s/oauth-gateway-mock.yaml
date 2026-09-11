@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oauth-gateway-mock-config
+  namespace: insurverse
+data:
+  nginx.conf: |
+    events {}
+    http {
+        server {
+            listen 8080;
+            location /services/oauth/v2/token {
+                default_type application/json;
+                add_header Access-Control-Allow-Origin "*" always;
+                add_header Access-Control-Allow-Headers "*" always;
+                add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+                if ($request_method = OPTIONS) {
+                    return 204;
+                }
+                return 200 '{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmVmaXhfbmFtZSI6IiIsImZpcnN0X25hbWUiOiJmaXJzdF9uYW1lIiwibGFzdF9uYW1lIjoibGFzdF9uYW1lIiwiZW1haWwiOiJhcGlAc2YuY29tIiwibW9iaWxlIjoiIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm1vYmlsZV92ZXJpZmllZCI6ZmFsc2UsImlzX3JlZ2lzdGVyIjpmYWxzZSwiaWQiOiJlMjg2MzMyNy02MWE3LTQwNjktYTVhZi0wYmYxZjk1YzZmZWUiLCJ0b2tlbiI6IiIsImV4cCI6MTc4OTAyMjc1NiwiaWF0IjoxNzI1OTUwNzU2fQ.UWZOSL0B1Sc2VM8nLulTfsMIv6qEiGm5mpnZvvY5Z8U","token_type":"Bearer","expires_in":86400}';
+            }
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth-gateway-mock
+  namespace: insurverse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth-gateway-mock
+  template:
+    metadata:
+      labels:
+        app: oauth-gateway-mock
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: config
+          configMap:
+            name: oauth-gateway-mock-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth-gateway-mock-service
+  namespace: insurverse
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: oauth-gateway-mock

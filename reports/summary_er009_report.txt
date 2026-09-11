@@ -1,0 +1,45 @@
+เรียน หัวหน้างาน / ทีมงานที่เกี่ยวข้อง
+
+เรื่อง: รายงานผลการตรวจสอบข้อผิดพลาด ERROR CODE [ER009]: Compulsory Master Data is not found ในระบบ Renewal Summary Link (isv-test)
+
+1. สรุปภาพรวม (Executive Summary)
+- ข้อผิดพลาดไม่เกี่ยวข้องกับการ Deploy Frontend (Next.js) หรือการตั้งค่า Ingress / SSL บน GCP ที่ดำเนินการไปก่อนหน้านี้
+- สาเหตุแท้จริงเกิดจาก ความไม่ตรงกันของข้อมูล (Data Mismatch) ระหว่างข้อมูลรถของกรมธรรม์ที่นำมาทดสอบ กับตาราง Master Data ในฐานข้อมูล PostgreSQL ในขั้นตอนที่ Stored Procedure ค้นหาเบี้ย พ.ร.บ. สำหรับการต่ออายุ
+
+2. รายละเอียดทางเทคนิค (Technical Root Cause)
+1) ลำดับการทำงาน:
+   isv-test/renewal/summary-link -> nodejs-express-premium-service -> PostgreSQL Stored Procedure: insurverse.fn_policy_renewal
+2) จุดที่เกิดปัญหา:
+   ในฟังก์ชันมีการค้นหาเบี้ย พ.ร.บ. จากตาราง insurverse."Imp_Discount_Premium" ด้วยเงื่อนไข:
+   WHERE "Brand" = TR_CAR_BRAND AND "Model" = TR_CAR_MODEL AND "Year" = TR_CAR_YEAR AND "BodyType" = TR_BODYTYPE AND "Doors" = TR_DOOR
+3) สาเหตุที่หาข้อมูลไม่พบ:
+   - Casing Mismatch: ข้อมูลในกรมธรรม์เก็บเป็นตัวพิมพ์ใหญ่ เช่น HONDA, CIVIC แต่ตาราง Master Data เก็บเป็น Title Case เช่น Honda, Civic (คำสั่ง SQL ใช้ '=' ทำให้ Case-Sensitive ไม่ตรงกัน)
+   - Missing Attributes: ข้อมูลในกรมธรรม์ไม่มี BodyType และ Doors (เป็นค่าว่างหรือ NULL) แต่ Master Data ต้องการค่าระบุชัดเจน เช่น 'เก๋ง 2 ตอน' และ '4'
+4) ผลลัพธ์:
+   ฟังก์ชันหาข้อมูลไม่พบ จึงคืนค่า ER009 (Compulsory Master Data is not found) ทำให้สร้าง Lead ต่ออายุไม่สำเร็จ และไม่ได้รับลิงก์ link_renew
+
+3. แนวทางแก้ไข (Recommendations)
+- แนวทางที่ 1 (แนะนำ - ถาวร): ปรับ Stored Procedure fn_policy_renewal ให้ใช้ ILIKE (Case-Insensitive) และเพิ่ม Fallback กรณี BodyType/Doors ว่าง ให้ดึงค่า Default ของรถรุ่นนั้นมาคำนวณเบี้ย พ.ร.บ.
+- แนวทางที่ 2 (แก้ไขเฉพาะหน้า): อัปเดตข้อมูลรถของกรมธรรม์ที่นำมาทดสอบ (Brand, Model, BodyType, Doors) ให้ตรงกับตาราง Master Data
+
+--------------------------------------------------------------------------------
+
+Dear Lead / Team,
+
+Subject: Root Cause Analysis for ERROR CODE [ER009]: Compulsory Master Data is not found in Renewal Summary Link (isv-test)
+
+1. Executive Summary
+- This error is completely unrelated to any Frontend (Next.js) deployment or GCP Ingress/SSL configuration.
+- The root cause is a vehicle data mismatch between the tested policy and the compulsory rate master table inside the PostgreSQL stored procedure (fn_policy_renewal).
+
+2. Technical Root Cause
+- Flow: isv-test/renewal/summary-link -> nodejs-express-premium-service -> insurverse.fn_policy_renewal.
+- Query: Compulsory pricing is looked up from insurverse."Imp_Discount_Premium" matching Brand, Model, Year, BodyType, and Doors.
+- Mismatch:
+  1) Casing: Policy has uppercase (HONDA, CIVIC), whereas Master table has Title Case (Honda, Civic). Exact match '=' fails.
+  2) Missing BodyType/Doors: Policy has empty values, whereas Master table requires specific values ('เก๋ง 2 ตอน', 4).
+- Result: Query returns 0 rows, fn_policy_renewal throws ER009, lead creation fails, and link_renew is missing.
+
+3. Recommendations
+- Option 1 (Recommended - Permanent): Update fn_policy_renewal to use ILIKE and add fallback logic when BodyType/Doors is empty.
+- Option 2 (Immediate Test Data Fix): Update vehicle details on the test policy to match Imp_Discount_Premium.

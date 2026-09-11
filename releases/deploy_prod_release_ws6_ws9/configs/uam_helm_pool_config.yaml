@@ -1,0 +1,11 @@
+# Helm Values snippet for go-echo-uam-service
+# Database Connection Pooling Configuration (WS9)
+env:
+  - name: DB_MAX_OPEN_CONNS
+    value: "50"
+  - name: DB_MAX_IDLE_CONNS
+    value: "25"
+  - name: DB_CONN_MAX_LIFETIME
+    value: "15m"
+  - name: DB_CONN_MAX_IDLE_TIME
+    value: "5m"

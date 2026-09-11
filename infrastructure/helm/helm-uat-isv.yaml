@@ -1,0 +1,57 @@
+# ------------------------------------------------------------------
+# Approved Option 1: Helm Values Configuration for uat-isv Environment
+# ------------------------------------------------------------------
+
+replicaCount: 1
+
+image:
+  repository: asia-southeast1-docker.pkg.dev/insurverse-uat/insurverse/backend-service
+  pullPolicy: Always
+
+service:
+  type: NodePort
+  port: 8080
+
+config:
+  containerPort: 8080
+  envVariables:
+    - name: ENV
+      value: uat-isv
+    - name: DATABASE_HOST
+      value: 10.150.0.10 # Private IP of Cloud SQL Instance
+    - name: DATABASE_PORT
+      value: "5432"
+    - name: DATABASE_USER
+      value: pgpool
+    - name: DATABASE_NAME
+      value: insurverse
+    - name: HTTP_PORT
+      value: "8080"
+    - name: Base_Url
+      value: https://insurverse-uat-isv-api.insurverse.co.th/
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 200m
+    memory: 1024Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthcheck
+    port: 8080
+  initialDelaySeconds: 45
+  timeoutSeconds: 3
+  periodSeconds: 10
+  failureThreshold: 5
+
+readinessProbe:
+  httpGet:
+    path: /healthcheck
+    port: 8080
+  initialDelaySeconds: 45
+  timeoutSeconds: 3
+  periodSeconds: 10
+  failureThreshold: 5

@@ -1,0 +1,268 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-uat-isv
+  namespace: insurverse
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "$http_origin"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,token,x-access-token"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - insurverse-uat-isv-api.insurverse.co.th
+      secretName: uat-isv-tls-secret
+  rules:
+    - host: insurverse-uat-isv-api.insurverse.co.th
+      http:
+        paths:
+          # 1. Core Service
+          - path: /api/v1/core
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-core-service
+                port:
+                  number: 8080
+
+          # 2. UAM Service
+          - path: /api/v1/uam
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-uam-service
+                port:
+                  number: 8080
+
+          # 3. Purchase Service
+          - path: /api/v1/purchase
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-purchase-service
+                port:
+                  number: 8080
+
+          # 4. Document Service
+          - path: /api/v1/doc
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-doc-service
+                port:
+                  number: 8080
+
+          # 5. IIA Service
+          - path: /api/v1/iia
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-iia-service
+                port:
+                  number: 3000
+
+          # 6. Auth Service
+          - path: /api/v1/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-auth-service
+                port:
+                  number: 8080
+
+          # 7. Lead Policy Service
+          - path: /api/v1/backoffice-lead-policy
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-lead-policy-service
+                port:
+                  number: 8080
+
+          # 8. PA Service
+          - path: /api/v1/pa
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-pa-service
+                port:
+                  number: 8080
+
+          # 9. TA Service
+          - path: /api/v1/ta
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-ta-service
+                port:
+                  number: 8080
+
+          # 10. Salesforce Service
+          - path: /api/v1/sf
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-saleforce-service
+                port:
+                  number: 3001
+
+          # 11. Notification Service
+          - path: /api/v1/notification
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-notification-service
+                port:
+                  number: 8080
+
+          # 12. File Service
+          - path: /api/v1/file
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-file-service
+                port:
+                  number: 8080
+
+          # 13. Home Service
+          - path: /api/v1/home
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-home-service
+                port:
+                  number: 8080
+
+          # 14. Internal Service
+          - path: /api/v1/internal
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-internal-service
+                port:
+                  number: 8080
+
+          # 15. Backoffice Service
+          - path: /api/v1/backoffice
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-backoffice-service
+                port:
+                  number: 8080
+
+          # 16. Consent Service
+          - path: /api/v1/consent
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-consent-service
+                port:
+                  number: 4000
+
+          # 17. AMLO Service
+          - path: /api/v1/amlo
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-amlo-service
+                port:
+                  number: 8080
+
+          # 18. Analytics Service
+          - path: /api/v1/analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-analytics-service
+                port:
+                  number: 8080
+
+          # 19. Policy Service
+          - path: /api/v1/policy
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-policy-service
+                port:
+                  number: 8080
+
+          # 20. Queue Service
+          - path: /api/v1/queue
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-queue-service
+                port:
+                  number: 8080
+
+          # 21. Premium Service
+          - path: /api/v1/premium
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-premium-service
+                port:
+                  number: 3001
+
+          # 22. Marketing Service
+          - path: /api/v1/marketing
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-marketing-service
+                port:
+                  number: 3001
+
+          # 23. Jasper Report Service
+          - path: /api/v1/jasper
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-jasper-report-service
+                port:
+                  number: 8080
+
+          # 24. Node OIC Service
+          - path: /api/v1/oic
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-oic-service
+                port:
+                  number: 3000
+
+          # 25. Go E-API Service
+          - path: /api/v1/e-api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-e-api-service
+                port:
+                  number: 8080
+
+          # 26. ISV Test Service
+          - path: /api/v1/test
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-isv-test-service
+                port:
+                  number: 8080
+
+          # 27. OAuth / Services Route (Gateway Mock)
+          - path: /services/oauth
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth-gateway-mock-service
+                port:
+                  number: 8080

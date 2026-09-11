@@ -1,0 +1,340 @@
+<mxfile host="app.diagrams.net" modified="2026-09-01T14:45:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+  <diagram id="shopee-flow-e2e" name="Shopee Insurance End-to-End API Flow">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2339" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title Block -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size: 20px;&quot;&gt;Insurverse - Shopee Insurance &amp;amp; Act End-to-End API Flow&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 13px; color: #64748B;&quot;&gt;Detailed Microservices Sequence &amp;amp; Endpoint Integration&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1560" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Participants Headers -->
+        <!-- 1. Customer -->
+        <mxCell id="p_user" value="&lt;b&gt;👤 Customer&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#666666&quot; size=&quot;1&quot;&gt;Shopee Buyer&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=2;size=50;" vertex="1" parent="1">
+          <mxGeometry x="50" y="110" width="130" height="1500" as="geometry" />
+        </mxCell>
+
+        <!-- 2. Web Frontend -->
+        <mxCell id="p_web" value="&lt;b&gt;🌐 Web App&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#666666&quot; size=&quot;1&quot;&gt;Insurverse Frontend&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F0FDF4;strokeColor=#22C55E;strokeWidth=2;size=50;" vertex="1" parent="1">
+          <mxGeometry x="230" y="110" width="140" height="1500" as="geometry" />
+        </mxCell>
+
+        <!-- 3. Consent Service -->
+        <mxCell id="p_consent" value="&lt;b&gt;🛡️ Consent Service&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#666666&quot; size=&quot;1&quot;&gt;:4000 (Echo)&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#ECFEFF;strokeColor=#06B6D4;strokeWidth=2;size=50;" vertex="1" parent="1">
+          <mxGeometry x="420" y="110" width="140" height="1500" as="geometry" />
+        </mxCell>
+
+        <!-- 4. Core / Purchase Service -->
+        <mxCell id="p_core" value="&lt;b&gt;⚙️ Purchase / Core&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#666666&quot; size=&quot;1&quot;&gt;:8080 (Echo)&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#FFFBEB;strokeColor=#F59E0B;strokeWidth=2;size=50;" vertex="1" parent="1">
+          <mxGeometry x="610" y="110" width="150" height="1500" as="geometry" />
+        </mxCell>
+
+        <!-- 5. PostgreSQL DB -->
+        <mxCell id="p_db" value="&lt;b&gt;🗄️ PostgreSQL DB&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#666666&quot; size=&quot;1&quot;&gt;insurverse schema&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=2;size=50;" vertex="1" parent="1">
+          <mxGeometry x="810" y="110" width="140" height="1500" as="geometry" />
+        </mxCell>
+
+        <!-- 6. INET E-Tax -->
+        <mxCell id="p_etax" value="&lt;b&gt;🏛️ INET E-Tax&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#666666&quot; size=&quot;1&quot;&gt;sign.one.th Gateway&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#FDF2F8;strokeColor=#EC4899;strokeWidth=2;size=50;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="110" width="140" height="1500" as="geometry" />
+        </mxCell>
+
+        <!-- 7. Document Service -->
+        <mxCell id="p_doc" value="&lt;b&gt;📑 Document Service&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#666666&quot; size=&quot;1&quot;&gt;:8080 (FastAPI/Jasper)&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#FEF2F2;strokeColor=#EF4444;strokeWidth=2;size=50;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="110" width="160" height="1500" as="geometry" />
+        </mxCell>
+
+        <!-- 8. Notification Service -->
+        <mxCell id="p_noti" value="&lt;b&gt;📨 Notification Svc&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#666666&quot; size=&quot;1&quot;&gt;:8080 (SMS/Email)&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F1F5F9;strokeColor=#64748B;strokeWidth=2;size=50;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="110" width="150" height="1500" as="geometry" />
+        </mxCell>
+
+        <!-- SECTION 1: Shopee Purchase & Entry -->
+        <mxCell id="sec1" value="&lt;b&gt;SECTION 1: SHOPEE ORDER INGESTION &amp;amp; ENTRY POINT&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0E7FF;strokeColor=#6366F1;fontColor=#3730A3;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="50" y="180" width="1500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Msg 1.1: Webhook / Seed -->
+        <mxCell id="m1" value="1. Shopee Order Webhook / Seed Data (order_sn, sku, ref_code)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4F46E5;strokeWidth=2;fontColor=#4F46E5;" edge="1" parent="1" target="p_db">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="115" y="240" as="sourcePoint" />
+            <mxPoint x="880" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 1.2: Customer open link -->
+        <mxCell id="m2" value="2. Open URL with ?refcode={ref_code}&amp;amp;si={si}&amp;amp;class={class}&amp;amp;includeAct=..." style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2563EB;strokeWidth=2;fontColor=#2563EB;" edge="1" parent="1" source="p_user" target="p_web">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="115" y="280" as="sourcePoint" />
+            <mxPoint x="300" y="280" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="200" y="280" />
+              <mxPoint x="200" y="280" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- SECTION 2: Consent Flow -->
+        <mxCell id="sec2" value="&lt;b&gt;SECTION 2: PDPA &amp;amp; USER CONSENT FLOW&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CFFAFE;strokeColor=#06B6D4;fontColor=#155E75;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="50" y="320" width="1500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Msg 2.1: Access flow -->
+        <mxCell id="m3" value="3. POST /api/v1/consent/access/{flow} (Init Flow Session)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0891B2;strokeWidth=2;fontColor=#0891B2;" edge="1" parent="1" source="p_web" target="p_consent">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="370" as="sourcePoint" />
+            <mxPoint x="490" y="370" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="400" y="370" />
+              <mxPoint x="400" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 2.2: Get purpose -->
+        <mxCell id="m4" value="4. GET /api/v1/consent/purpose (Fetch PDPA &amp;amp; Marketing Purposes)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0891B2;strokeWidth=2;fontColor=#0891B2;" edge="1" parent="1" source="p_web" target="p_consent">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="410" as="sourcePoint" />
+            <mxPoint x="490" y="410" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="400" y="410" />
+              <mxPoint x="400" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 2.3: Submit consent receipt group -->
+        <mxCell id="m5" value="5. POST /api/v1/consent/consent-receipt-group (Submit PDPA / IIA / Marketing Consent)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0891B2;strokeWidth=2;fontColor=#0891B2;" edge="1" parent="1" source="p_web" target="p_consent">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="450" as="sourcePoint" />
+            <mxPoint x="490" y="450" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="400" y="450" />
+              <mxPoint x="400" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 2.4: Save consent to DB -->
+        <mxCell id="m6" value="6. INSERT into consent_receipt, consent_receipt_item" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6B21A8;strokeWidth=1;dashed=1;fontColor=#6B21A8;" edge="1" parent="1" source="p_consent" target="p_db">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="480" as="sourcePoint" />
+            <mxPoint x="880" y="480" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="680" y="480" />
+              <mxPoint x="680" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- SECTION 3: Vehicle Master Data & Form Submission -->
+        <mxCell id="sec3" value="&lt;b&gt;SECTION 3: VEHICLE MASTER DATA &amp;amp; POLICY LEAD CREATION&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontColor=#92400E;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="50" y="520" width="1500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Msg 3.1: Master Data -->
+        <mxCell id="m7" value="7. GET /api/v1/core/get-brand, get-model, get-years (Load Car Masters)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D97706;strokeWidth=2;fontColor=#D97706;" edge="1" parent="1" source="p_web" target="p_core">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="570" as="sourcePoint" />
+            <mxPoint x="685" y="570" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="500" y="570" />
+              <mxPoint x="500" y="570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 3.2: Create Payment / Lead -->
+        <mxCell id="m8" value="8. POST /api/v1/purchase/create-payment (MV/Combo) OR /create-payment-act (MC)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D97706;strokeWidth=2;fontColor=#D97706;" edge="1" parent="1" source="p_web" target="p_core">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="620" as="sourcePoint" />
+            <mxPoint x="685" y="620" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="500" y="620" />
+              <mxPoint x="500" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 3.3: Validate & Lock -->
+        <mxCell id="m9" value="9. Vehicle Duplicate Validation + DB Lock (fn_lead_to_car_act) -> Generate lead_no" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6B21A8;strokeWidth=2;fontColor=#6B21A8;" edge="1" parent="1" source="p_core" target="p_db">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="660" as="sourcePoint" />
+            <mxPoint x="880" y="660" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="780" y="660" />
+              <mxPoint x="780" y="660" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- SECTION 4: Payment Callback & Policy Issuance -->
+        <mxCell id="sec4" value="&lt;b&gt;SECTION 4: PAYMENT CALLBACK &amp;amp; POLICY ACTIVATION&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#22C55E;fontColor=#166534;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="50" y="710" width="1500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Msg 4.1: Payment consent -->
+        <mxCell id="m10" value="10. POST /api/v1/consent/consent-receipt/payment (Record Payment Consent)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;fontColor=#16A34A;" edge="1" parent="1" source="p_web" target="p_consent">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="760" as="sourcePoint" />
+            <mxPoint x="490" y="760" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="400" y="760" />
+              <mxPoint x="400" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 4.2: Payment callback -->
+        <mxCell id="m11" value="11. POST /api/v1/purchase/callback (Or /check-payment / /check-payment-act)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;fontColor=#16A34A;" edge="1" parent="1" source="p_web" target="p_core">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="800" as="sourcePoint" />
+            <mxPoint x="685" y="800" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="500" y="800" />
+              <mxPoint x="500" y="800" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 4.3: Issue policy -->
+        <mxCell id="m12" value="12. Execute fn_policy_to_car_act -> Issue policy_no, invoice_no &amp;amp; update callback_logs = SUCCESS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6B21A8;strokeWidth=2;fontColor=#6B21A8;" edge="1" parent="1" source="p_core" target="p_db">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="840" as="sourcePoint" />
+            <mxPoint x="880" y="840" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="780" y="840" />
+              <mxPoint x="780" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- SECTION 5: INET E-Tax Processing -->
+        <mxCell id="sec5" value="&lt;b&gt;SECTION 5: INET E-TAX SIGNING (ASYNC 30-60 SECONDS)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE7F3;strokeColor=#EC4899;fontColor=#9D174D;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="50" y="890" width="1500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Msg 5.1: E-Tax request -->
+        <mxCell id="m13" value="13. POST /webservice/api/v2/signing/pdfSigning-V3 (Submit E-Tax Payload)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DB2777;strokeWidth=2;fontColor=#DB2777;" edge="1" parent="1" source="p_core" target="p_etax">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="940" as="sourcePoint" />
+            <mxPoint x="1070" y="940" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="880" y="940" />
+              <mxPoint x="880" y="940" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 5.2: E-tax processing -->
+        <mxCell id="m14" value="14. Async Processing: Initial status 'PC' -> Polled / Updated to 'SUCCESS'" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DB2777;strokeWidth=1;dashed=1;fontColor=#DB2777;" edge="1" parent="1" source="p_etax" target="p_db">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1070" y="980" as="sourcePoint" />
+            <mxPoint x="880" y="980" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="970" y="980" />
+              <mxPoint x="970" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- SECTION 6: Document Generation (PDF) -->
+        <mxCell id="sec6" value="&lt;b&gt;SECTION 6: JASPERREPORTS PDF GENERATION (POLICY &amp;amp; RECEIPT)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#EF4444;fontColor=#991B1B;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1030" width="1500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Msg 6.1: GET MV Policy -->
+        <mxCell id="m15" value="15a. GET /api/v1/doc/policy/{policyNo} (Generate MV Policy Schedule PDF)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;fontColor=#DC2626;" edge="1" parent="1" source="p_core" target="p_doc">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="1080" as="sourcePoint" />
+            <mxPoint x="1270" y="1080" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="980" y="1080" />
+              <mxPoint x="980" y="1080" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 6.2: GET MV Receipt -->
+        <mxCell id="m16" value="15b. GET /api/v1/doc/policy/{policyNo}/receipt (Generate MV Official Receipt / Tax Invoice PDF)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;fontColor=#DC2626;" edge="1" parent="1" source="p_core" target="p_doc">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="1120" as="sourcePoint" />
+            <mxPoint x="1270" y="1120" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="980" y="1120" />
+              <mxPoint x="980" y="1120" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 6.3: GET MC Policy & Receipt -->
+        <mxCell id="m17" value="15c. GET /api/v1/doc/act/{policyNo}/policy &amp;amp; /receipt (Generate MC Act Policy &amp;amp; Receipt PDF)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;fontColor=#DC2626;" edge="1" parent="1" source="p_core" target="p_doc">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="1160" as="sourcePoint" />
+            <mxPoint x="1270" y="1160" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="980" y="1160" />
+              <mxPoint x="980" y="1160" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 6.4: Fetch labels from DB -->
+        <mxCell id="m18" value="16. Query Data &amp;amp; Master Text Labels (provinceLabel, districtLabel, etc.) for JasperReports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6B21A8;strokeWidth=1;dashed=1;fontColor=#6B21A8;" edge="1" parent="1" source="p_doc" target="p_db">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1270" y="1200" as="sourcePoint" />
+            <mxPoint x="880" y="1200" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1080" y="1200" />
+              <mxPoint x="1080" y="1200" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- SECTION 7: Notification Dispatch -->
+        <mxCell id="sec7" value="&lt;b&gt;SECTION 7: NOTIFICATION DISPATCH (SMS &amp;amp; EMAIL)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#64748B;fontColor=#334155;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1250" width="1500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Msg 7.1: Email -->
+        <mxCell id="m19" value="17. POST /api/v1/notification/email (Send Email with Policy Schedule &amp;amp; Receipt Attachments)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#475569;strokeWidth=2;fontColor=#475569;" edge="1" parent="1" source="p_doc" target="p_noti">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1270" y="1300" as="sourcePoint" />
+            <mxPoint x="1475" y="1300" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1370" y="1300" />
+              <mxPoint x="1370" y="1300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 7.2: SMS -->
+        <mxCell id="m20" value="18. POST /api/v1/notification/sms (Send SMS Policy Confirmation &amp;amp; Tracking Link)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#475569;strokeWidth=2;fontColor=#475569;" edge="1" parent="1" source="p_doc" target="p_noti">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1270" y="1340" as="sourcePoint" />
+            <mxPoint x="1475" y="1340" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1370" y="1340" />
+              <mxPoint x="1370" y="1340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Msg 7.3: Deliver to customer -->
+        <mxCell id="m21" value="19. Deliver SMS &amp;amp; Email with Policy PDFs to Customer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=2;dashed=1;fontColor=#059669;" edge="1" parent="1" source="p_noti" target="p_user">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1475" y="1390" as="sourcePoint" />
+            <mxPoint x="115" y="1390" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="800" y="1390" />
+              <mxPoint x="800" y="1390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
