@@ -5,6 +5,10 @@
 > * **วันที่/เวลาดำเนินการ:** ตามกำหนดการปล่อยระบบ (Release Schedule)
 > * **ระดับความเสี่ยง (Risk Level):** ปานกลาง (มีส่วนฐานข้อมูล Stored Procedure แต่มี Transaction Advisory Locks และสคริปต์ Rollback รองรับ 100%)
 > * **ระยะเวลา Downtime:** **Zero Downtime** (ไม่มีการหยุดให้บริการระบบ)
+> 
+> 📚 **เอกสารในชุดส่งมอบ (Production Documentation Pack):**
+> * 📋 **แผนแม่บทการทดสอบ:** [`oic_master_test_plan.md`](file:///Users/kritsanawathaniyanon/Code/Go/deploy_jobs/01_oic/oic_master_test_plan.md)
+> * ✅ **รายงานผลการทดสอบ (100% PASS):** [`test_cases_oic.md`](file:///Users/kritsanawathaniyanon/Code/Go/deploy_jobs/01_oic/test_cases_oic.md)
 
 ---
 
