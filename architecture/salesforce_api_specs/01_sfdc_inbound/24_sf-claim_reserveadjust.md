@@ -1,0 +1,466 @@
+# [24] SF-Claim ReserveAdjust
+
+- **Category**: `sfdc_inbound`
+- **Source Sheet**: `SF-Claim ReserveAdjust`
+- **Total Rows Parsed**: `227`
+
+## API Specification Overview
+
+- **Endpoint URL**: `/services/apexrest/upsertclaimcoverage`
+- **HTTP Method**: `POST`
+- **Headers**:
+  - `Authorization: Bearer + (access token)`
+  - `Content-Type: application/json`
+
+## Raw & Structured Data Specification
+
+### Request Message
+
+### END POINT
+
+| URL | /services/apexrest/upsertclaimcoverage |
+| --- | --- |
+
+### HTTP
+
+| Methods | POST |
+| --- | --- |
+
+### Header
+
+| Content-Type | application/json | Col3 | Col4 | Col5 | Col6 | Col7 | Col8 | Col9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Authorization | Bearer + (access token) |  |  |  |  |  |  |  |
+| No | Update Payment |  |  |  |  |  |  |  |
+|  | Field Name | Source - Field Name (Service Model) | SF Field | Type | External Key | Required Field | Remark | GCP Field |
+| 0 |  |  |  | Array |  |  |  |  |
+| 1 | Claim Number | claimId | ClaimId | Text(20) | Y | Y | เลขเคลม |  |
+| 2 | Coverage Number | coverageID | CLAIMID__c | Text(20) | Y | Y | หมายเลข e-Claim |  |
+| 3 | Policy Number | policyNumber |  | Text(20) |  |  | เลขกรมธรรม์ |  |
+| 4 | Item No | itemNo |  | Integer |  |  | ลำดับที่ |  |
+| 5 | Claim Coverage Type | claimCoverageType |  | Picklist |  |  | ประเภทของการเบิก (Loss Code Group) IV        Insure Vehicle TV        Third Party Vehicle TP        Third Party Property DV        Driver PN        Insured Passenger PR        Driver Related Passenger ON        Third Party Injury OR        Third Party Driver Related Injury |  |
+| 6 | Status | status |  | Picklist |  |  | Status ของ Claim อยู่ใน Level ไหนบน IIA Claim Status - OP (On Process) - CL (Closed Claim) - RO (Reopen Claim) - IN (In Process) - RS (Receive Settle) - ST (Settle) - CC (Cancel) - RV (Reserve) |  |
+| 7 | EMCS Status | emcsStatus |  | Picklist |  |  | สถานะการซ่อม |  |
+|  |  |  |  |  |  |  | สถานะการคุมราคา (เสนอราคา, ยังไม่เสนอราคา, รออนุมัติ, อนุมัติ, ไม่อนุมัติ) |  |
+| 8 | Active | active |  | Boolean |  |  | true/false |  |
+| 6 | Losscode | losscode |  | Array |  |  | รายการ Losscode ที่ต้องการเบิก |  |
+| 6.1 | Loss Type | lossType | Loss_Type__c | Picklist |  |  | Loss, Salvage, Deduct, Expense |  |
+| 6.2 | Loss Code ID | locccodeID | Loss_Code__c | Text(100) |  |  | Extenal Id from Master_Loss_Code_Claim_Motor__c |  |
+| 6.3 | Amount | amount | Reverse_Amount__c | Currency(16, 2) |  |  | ยอดประมาณการ |  |
+| 6.4 | Waive Flag | waiveFlag | Wve_Flag__c | Text(1) |  |  | Y, N |  |
+| 6.5 | Waive Amount | waiveAmount | Wve_Amount__c | Decimal(16,2) |  |  | For Deduct |  |
+| 6.6 | Document No | documentNo | Doc_No__c | Text(255) |  |  | For Deduct |  |
+| 6.7 | Document Date | documentDate | Doc_Date__c | Date |  |  | For Deduct |  |
+| 6.8 | Document Status | documentStatus | Doc_Status__c | Text(255) |  |  | For Deduct |  |
+| 7 | Car Detail | carDetail |  | Object |  | Y (Car) | Contain Car Detail |  |
+| 7.1 | Can Recovery | canRecovery | Car_Insure__c | Boolean |  |  | สามารถเรียกร้องได้ไหม |  |
+| 7.2 | Voluntary Policy | voluntaryPolicy | Voluntary_Policy__c | Text(255) |  |  | เลข Policy สมัครใจ |  |
+| 7.3 | Voluntary Insurance Company (BR Code) | voluntaryCompanyBrCode | Voluntary_Insurance_Company__c.Brcode__c | Text(100) |  |  | Insurance Company (BR Code) สมัครใจ |  |
+| 7.4 | Voluntary Insurance Company (Entity ID) | voluntaryCompanyEntityID | Voluntary_Insurance_Company__c.entityid__c | Text(100) |  |  | Insurance Company (Entity ID) สมัครใจ |  |
+| 7.5 | Voluntary Effective Date | voluntaryEffectiveDate | Voluntary_Effective_Date__c | Date |  |  | วันที่เริ่มมีผล |  |
+| 7.6 | Voluntary Expiry Date | voluntaryExpiryDate | Voluntary_Expiry_Date__c | Date |  |  | วันที่หมดอายุ |  |
+| 7.7 | Voluntary Class | voluntaryClass | Voluntary_Class__c | Picklist |  |  | ประกันชั้น 1, 2, 3 |  |
+| 7.8 | Voluntary Claim No. | voluntaryClaimNo | Voluntary_Claim_No__c | Text(255) |  |  | เลขเคลม สมัครใจ |  |
+| 7.9 | Voluntary TPPD | voluntaryTPPD | Voluntary_TPPD__c | Demcimal(16,2) |  |  | ค่าทรัพย์สินคู่กรณี (ต่อครั้ง) |  |
+| 7.10 | Compulsory Policy | compulsoryPolicy | Compulsory_Policy__c | Text(255) |  |  | เลข Policy บังคับ |  |
+| 7.11 | Compulsory Company Name (BR Code) | compulsoryCompanyBrCode | Compulsory_Insurance_Company__c.Brcode__c | Text(100) |  |  | Insurance Company (BR Code) บังคับ |  |
+| 7.12 | Compulsory Company Name (Entity ID) | compulsoryCompanyEntityID | Compulsory_Insurance_Company__c.entityid__c | Text(100) |  |  | Insurance Company (Entity ID) บังคับ |  |
+| 7.13 | Compulsory Effective Date | compulsoryEffectiveDate | Compulsory_Effective_Date__c | Date |  |  | วันที่เริ่มมีผล |  |
+| 7.14 | Compulsory Expiry Date | compulsoryExpiryDate | Compulsory_Expiry_Date__c | Date |  |  | วันที่หมดอายุ |  |
+| 7.15 | Compulsory Claim No. | compulsoryClaimNo | Compulsory_Claim_No__c | Text(255) |  |  | เลขเคลม บังคับ |  |
+|  | Repairer Code | repairerCode |  | Text(255) |  |  | รหัสอู่ |  |
+|  | Repairer Name | repairerName |  | Text(255) |  |  | ชื่ออู่ |  |
+|  | Originator Code | originatorCode |  | Text(255) |  |  | รหัสร้านกระจก |  |
+|  | Originator Name | originatorName |  | Text(255) |  |  | ชื่อร้านกระจก |  |
+| 7.16 | License No | carRegisterNo | Car_Register_No__c | Text(10) |  |  | เลขทะเบียนรถ |  |
+| 7.17 | License Place | carProvince | Car_Province__c | Text(255) |  |  | รหัสจังหวัด ของทะเบียนรถ |  |
+| 7.18 | Unregistered Plate | carUnregister | Car_Unregister__c | Boolean |  |  | รถป้ายแดง? |  |
+| 7.19 | Brand | carBrand | Car_Brand__c | Text(255) |  |  | รหัส ยี่ห้อรถ |  |
+| 7.20 | Model Year | carModel | Car_Model__c | Text(255) |  |  | รหัส รุ่นรถ |  |
+| 7.21 | Color | carColor | Car_Color__c | Text(255) |  |  | รหัส สีรถ |  |
+| 7.22 | Chassis No | chassisNo | Chassis_No__c | Text(255) |  |  | เลขคัสซี |  |
+| 7.23 | Engine No. | engineNo | Engine_No__c | Text(255) |  |  | เลขตัวถัง |  |
+| 7.25 | Loss Initial Damage | lossInitialDamage | Loss_Initial_Damage__c | Number(16,2) |  |  | ประมาณการความเสียหายเบื้องต้น |  |
+| 7.26 | Car Description | carDescription | Car_Description__c | Text(255) |  |  | รายละเอียดรถ |  |
+| 7.27 | Prescription | prescription | Prescription__c | Picklist |  |  | 1, 2, None |  |
+| 7.28 | Prescription Date | prescriptionDate | Prescription_Date__c | Date |  |  | Loss Date + prescription |  |
+| 7.29 | Driver Title | driverTitle | Driver_Title__c | Text(255) |  |  | คำนำหน้าชื่อ ผู้ขับขี่ |  |
+| 7.30 | Driver Title ID | driverTitleID | Driver_Title_ID__c | Text(255) |  |  | รหัสคำนำหน้าชื่อ ผู้ขับขี่ |  |
+| 7.31 | Driver First Name | driverFirstName | Driver_FirstName__c | Text(255) |  |  | ชื่อ ผู้ขับขี่ |  |
+| 7.32 | Driver Last Name | driverLastName | Driver_LastName__c | Text(255) |  |  | นามสกุล ผู้ขับขี่ |  |
+| 7.33 | Driver Relation | driverRelation | driver_Relation__c | Text(50) |  |  | ความสัมพันธ์กับเจ้าของรถ ผู้ขับขี่ |  |
+| 7.34 | Driver Relation Code | driverRelationCode | Driver_Relation_ID__c | Text(50) |  |  | รหัสความสัมพันธ์กับเจ้าของรถ ผู้ขับขี่ |  |
+| 7.35 | Driver Birthday | driverBirthday | Driver_Birthday__c | Date |  |  | วันเกิด ผู้ขับขี่ |  |
+| 7.36 | Driver Age | driverAge | Driver_Age__c | Integer |  |  | อายุ ผู้ขับขี่ |  |
+| 7.37 | Driver Gender | driverGender | Driver_Gender__c | Picklist |  |  | เพศ ผู้ขับขี่ |  |
+| 7.38 | Driver Occupation | driverOccupation | Driver_Occupation__c | Text(255) |  |  | ตำแหน่งงาน ผู้ขับขี่ |  |
+| 7.39 | Driver License No | driverLicenseNo | Driver_License_No__c | Text(255) |  |  | เลขที่ใบขับขี่ ผู้ขับขี่ |  |
+| 7.40 | Driver License Type Text | driverLicenseTypeText | Driver_License_Type_Text__c | Text(255) |  |  | ประเภทใบขับขี่ ผู้ขับขี่ |  |
+| 7.41 | Driver License Type Code | driverLicenseTypeCode | Driver_License_Type_Code__c | Text(255) |  |  | รหัสประเภทใบขับขี่ ผู้ขับขี่ |  |
+| 7.42 | Driver License Issue Date | driverLicenseIssueDate | Driver_License_Issue_Date__c | Date |  |  | วันที่ออกบัตร ผู้ขับขี่ |  |
+| 7.43 | Driver License Expiry Date | driverLicenseExpiryDate | Driver_License_Expiry_Date__c | Date |  |  | วันที่บัตรหมดอายุ ผู้ขับขี่ |  |
+| 7.44 | Driver ID Card . | driverIDCard | Driver_ID_Card__c | Text(255) |  |  | เลขที่บัตรประจำตัว ผู้ขับขี่ |  |
+| 7.45 | Driver ID Card Type Text | driverIDCardTypeText | Driver_ID_Type__c | Text(255) |  |  | ประเภทบัตรประจำตัว ผู้ขับขี่ |  |
+| 7.46 | Driver ID Card Type Code | driverIDCardTypeCode | Driver_ID__c | Text(255) |  |  | รหัสประเภทบัตรประจำตัว ผู้ขับขี่ |  |
+| 7.47 | Driver ID Card Expiry Date | driverIDCardExpiryDate | Driver_ID_Card_Expired__c | Date |  |  | วันที่บัตรหมดอายุ ผู้ขับขี่ |  |
+| 7.48 | Driver Place | driverAddress | Driver_Address__c | Text(255) |  |  | ที่อยู่ ผู้ขับขี่ |  |
+| 7.49 | Driver No | driverNo | Driver_No__c | Text(255) |  |  | บ้านเลขที่ ผู้ขับขี่ |  |
+| 7.50 | Driver Moo | driverMoo | Driver_Moo__c | Text(255) |  |  | หมู่ ผู้ขับขี่ |  |
+| 7.51 | Driver Soi | driverSoi | Driver_Soi__c | Text(255) |  |  | ซอย ผู้ขับขี่ |  |
+| 7.52 | Driver Road | driverRoad | Driver_Road__c | Text(255) |  |  | ถนน ผู้ขับขี่ |  |
+| 7.53 | Driver District | driverDistrict | Driver_District__c | Text(255) |  |  | ตำบล ผู้ขับขี่ |  |
+| 7.54 | Driver District ID | driverDistrictID | Driver_District_ID__c | Text(255) |  |  | รหัสตำบล ผู้ขับขี่ |  |
+| 7.55 | Driver Amphur | driverAmphur | Driver_Amphur__c | Text(255) |  |  | อำเภอ ผู้ขับขี่ |  |
+| 7.56 | Driver Amphur ID | driverAmphurID | Driver_Amphur_ID__c | Text(255) |  |  | รหัสอำเภอ ผู้ขับขี่ |  |
+| 7.57 | Driver Province | driverProvince | Driver_Province__c | Text(255) |  |  | จังหวัด ผู้ขับขี่ |  |
+| 7.58 | Driver Province ID | driverProvinceID | Driver_Province_ID__c | Text(255) |  |  | รหัสจังหวัด ผู้ขับขี่ |  |
+| 7.59 | Driver Zip Code | driverZipCode | Driver_Zip_Code__c | Text(10) |  |  | รหัสไปรษณีย์ ผู้ขับขี่ |  |
+| 7.60 | Driver Country | driverCountry | Driver_Country__c | Text(255) |  |  | ประเทศ ผู้ขับขี่ |  |
+| 7.61 | Driver Country ID | driverCountryID | Driver_Country_ID__c | Text(255) |  |  | รหัสประเทศ ผู้ขับขี่ |  |
+| 7.62 | Driver Tel No. | driverTel | Driver_Tel__c | Phone |  |  | เบอร์โทรศัพท์ ผู้ขับขี่ |  |
+| 7.63 | Driver Fax No. | driverFax | Driver_Fax__c | Phone |  |  | แฟกซ์ ผู้ขับขี่ |  |
+| 7.64 | Driver E-Mail | driverEmail | Driver_Email__c | Text(80) |  |  | อีเมล ผู้ขับขี่ |  |
+| 7.65 | Owner Title | ownerTitle | Title__c | Text(255) |  |  | คำนำหน้าชื่อ เจ้าของกรมธรรม์ |  |
+| 7.66 | Owner Title ID | ownerTitleID | Title_ID__c | Text(255) |  |  | รหัสคำนำหน้าชื่อ เจ้าของกรมธรรม์ |  |
+| 7.67 | Owner First Name | ownerFirstName | FirstName__c | Text(255) |  |  | ชื่อ เจ้าของกรมธรรม์ |  |
+| 7.68 | Owner Last Name | ownerLastName | LastName__c | Text(255) |  |  | นามสกุล เจ้าของกรมธรรม์ |  |
+| 7.69 | Owner Relation | ownerRelation | Relation__c | Text(50) |  |  | ความสัมพันธ์กับเจ้าของรถ เจ้าของกรมธรรม์ |  |
+| 7.70 | Owner Relation Code | ownerRelationID | Relation_ID__c | Text(50) |  |  | รหัสความสัมพันธ์กับเจ้าของรถ เจ้าของกรมธรรม์ |  |
+| 7.71 | Owner Birthday | ownerBirthday | Birthday__c | Date |  |  | วันเกิด เจ้าของกรมธรรม์ |  |
+| 7.72 | Owner Age | ownerAge | Age__c | Integer |  |  | อายุ เจ้าของกรมธรรม์ |  |
+| 7.73 | Owner Sex | ownerGender | Gender__c | Picklist |  |  | เพศ เจ้าของกรมธรรม์ |  |
+| 7.74 | Owner Occupation | ownerOccupation | Occupation__c | Text(255) |  |  | ตำแหน่งงาน เจ้าของกรมธรรม์ |  |
+| 7.75 | Owner ID Card | ownerIDCard | Id_Card__c | Text(255) |  |  | เลขที่บัตรประจำตัว เจ้าของกรมธรรม์ |  |
+| 7.76 | Owner ID Card Type Text | ownerIDCardTypeText | Id_Type__c | Text(255) |  |  | ประเภทบัตรประจำตัว เจ้าของกรมธรรม์ |  |
+| 7.77 | Owner ID Card Type Code | ownerIDCardTypeCode | Id_Type_ID__c | Text(255) |  |  | รหัสประเภทบัตรประจำตัว เจ้าของกรมธรรม์ |  |
+| 7.78 | Owner ID Card Expiry Date | ownerIDCardExpiryDate | Id_Card_Expired__c | Date |  |  | วันที่บัตรหมดอายุ เจ้าของกรมธรรม์ |  |
+| 7.79 | Owner Place | ownerAddress | Address__c | Text(255) |  |  | ที่อยู่ เจ้าของกรมธรรม์ |  |
+| 7.80 | Owner No | ownerNo | No__c | Text(255) |  |  | บ้านเลขที่ เจ้าของกรมธรรม์ |  |
+| 7.81 | Owner Moo | ownerMoo | Moo__c | Text(255) |  |  | หมู่ เจ้าของกรมธรรม์ |  |
+| 7.82 | Owner Soi | ownerSoi | Soi__c | Text(255) |  |  | ซอย เจ้าของกรมธรรม์ |  |
+| 7.83 | Owner Road | ownerRoad | Road__c | Text(255) |  |  | ถนน เจ้าของกรมธรรม์ |  |
+| 7.84 | Owner District | ownerDistrict | District__c | Text(255) |  |  | ตำบล เจ้าของกรมธรรม์ |  |
+| 7.85 | Owner District ID | ownerDistrictID | District_ID__c | Text(255) |  |  | รหัสตำบล เจ้าของกรมธรรม์ |  |
+| 7.86 | Owner Amphur | ownerAmphur | Amphur__c | Text(255) |  |  | อำเภอ เจ้าของกรมธรรม์ |  |
+| 7.87 | Owner Amphur ID | ownerAmphurID | Amphur_ID__c | Text(255) |  |  | รหัสอำเภอ เจ้าของกรมธรรม์ |  |
+| 7.88 | Owner Province | ownerProvince | Province__c | Text(255) |  |  | จังหวัด เจ้าของกรมธรรม์ |  |
+| 7.89 | Owner Province ID | ownerProvinceID | Province_ID__c | Text(255) |  |  | รหัสจังหวัด เจ้าของกรมธรรม์ |  |
+| 7.90 | Owner Zip Code | ownerZipCode | Zip_Code__c | Text(255) |  |  | รหัสไปรษณีย์ เจ้าของกรมธรรม์ |  |
+| 7.91 | Owner Tel No. | ownerTel | Tel__c | Text(40) |  |  | เบอร์โทรศัพท์ เจ้าของกรมธรรม์ |  |
+| 7.92 | Owner Fax No. | ownerFax | Fax__c | Text(40) |  |  | แฟกซ์ เจ้าของกรมธรรม์ |  |
+| 7.93 | Owner E-Mail | ownerEmail | Email__c | Text(80) |  |  | อีเมล เจ้าของกรมธรรม์ |  |
+| 8 | Injury Detail | injuryDetail |  | Object |  | Y |  |  |
+| 8.1 | Person Type | personType | Person_Type__c | Picklist |  |  | รหัสประเภทผู้บาดเจ็บ |  |
+| 8.2 | Person Type Text | personTypeText | Person_Type_Text__c | Text(255) |  |  | ประเภทผู้บาดเจ็บ |  |
+| 8.3 | Title | title | Title__c | Text(40) |  |  | คำนำหน้า |  |
+| 8.4 | Title ID | titleID | Title_ID__c | Text(255) |  |  | คำนำหน้าชื่อ |  |
+| 8.5 | First Name | firstname | FirstName__c | Text(80) |  |  | ชื่อ |  |
+| 8.6 | Last Name | lastname | LastName__c | Text(255) |  |  | นามสกุล |  |
+| 8.7 | Relation | relation | Relation__c | Text(255) |  |  | ความสัมพันธ์กับเจ้าของรถ |  |
+| 8.8 | Relation Code | relationID | Relation_ID__c | Text(255) |  |  | รหัสความสัมพันธ์กับเจ้าของรถ |  |
+| 8.9 | Birthday | birthday | Birthday__c | Date |  |  | วันเกิด |  |
+| 8.10 | Age | age | Age__c | Integer |  |  | อายุ |  |
+| 8.11 | Gender | gender | Gender__c | Text(255) |  |  | เพศ |  |
+| 8.12 | Occupation | occupation | Occupation__c | Text(255) |  |  | ตำแหน่งงาน |  |
+| 8.13 | ID Card | idCard | Id_Card__c | Text(255) |  |  | เลขที่บัตรประจำตัว |  |
+| 8.14 | ID Type | idType | Id_Type__c | Text(255) |  |  | ประเภทบัตรประจำตัว |  |
+| 8.15 | ID Type ID | idTypeCode | Id_Type_ID__c | Text(255) |  |  | รหัสประเภทบัตรประจำตัว |  |
+| 8.16 | ID Card Expiry Date | idCardExpiryDate | Id_Card_Expired__c | Date |  |  | วันที่บัตรหมดอายุ |  |
+| 8.17 | Place | address | Address__c | Text(255) |  |  | ที่อยู่ |  |
+| 8.18 | No | no | No__c | Text(255) |  |  | บ้านเลขที่ |  |
+| 8.19 | Moo | moo | Moo__c | Text(255) |  |  | หมู่ |  |
+| 8.20 | Soi | soi | Soi__c | Text(255) |  |  | ซอย |  |
+| 8.21 | Road | road | Road__c | Text(255) |  |  | ถนน |  |
+| 8.22 | District | district | District__c | Text(255) |  |  | ตำบล |  |
+| 8.23 | District ID | districtID | District_ID__c | Text(255) |  |  | รหัสตำบล |  |
+| 8.24 | Amphur | amphur | Amphur__c | Text(255) |  |  | อำเภอ |  |
+| 8.25 | Amphur ID | amphurID | Amphur_ID__c | Text(255) |  |  | รหัสอำเภอ |  |
+| 8.26 | Province | province | Province__c | Text(255) |  |  | จังหวัด |  |
+| 8.27 | Province ID | provinceID | Province_ID__c | Text(255) |  |  | รหัสจังหวัด |  |
+| 8.28 | Zip Code | zipCode | Zip_Code__c | Text(10) |  |  | รหัสไปรษณีย์ |  |
+| 8.29 | Country | country | Country__c | Text(255) |  |  | ประเทศ |  |
+| 8.30 | Country ID | countryID | Country_ID__c | Text(255) |  |  | รหัสประเทศ |  |
+| 8.31 | Tel No. | driverTel | Tel__c | Text(40) |  |  | เบอร์โทรศัพท์ |  |
+| 8.32 | Fax No. | driverFax | Fax__c | Text(40) |  |  | แฟกซ์ |  |
+| 8.33 | E-Mail | driverEmail | Email__c | Text(80) |  |  | อีเมล |  |
+| 8.34 | Injured Details | injuredDetail | Injured_Detail__c | Text(255) |  |  | อาการบาดเจ็บ |  |
+| 8.35 | Wounded Type | woundedType | Wounded_Type_Text__c | Text(255) |  |  | ลักษณะอาการบาดเจ็บ |  |
+| 8.36 | Hospital Name | hospitalName | Hospital_Name__c | Text(255) |  |  | โรงพยาบาลที่เข้ารักษา |  |
+| 9 | Property Detail | propertyDetail | Object = ClaimItem(Asset) |  |  | Y |  |  |
+| 9.1 | Type | propertyType | Asset_Name__c | Text(255) |  |  | ประเภทของทรัพย์สิน |  |
+| 9.2 | Place | propertyAddress | Asset_Address__c | Text(255) |  |  | ที่อยู่เจ้าของ |  |
+|  | No | propertyNo |  | Text(255) |  |  | เลขที่บ้าน |  |
+|  | Moo | propertyMoo |  | Text(255) |  |  | หมู่ |  |
+| 9.3 | Soi | propertySoi | Asset_Soi__c | Text(255) |  |  | ซอย |  |
+| 9.4 | Road | propertyRoad | Asset_Road__c | Text(255) |  |  | ถนน |  |
+| 9.5 | District | propertyDistrict | Asset_District__c | Text(255) |  |  | ตำบล |  |
+| 9.6 | District ID | propertyDistrictID | Asset_District_ID__c | Text(255) |  |  | รหัสตำบล |  |
+| 9.7 | Amphur | propertyAmphur | Asset_Amphur__c | Text(255) |  |  | อำเภอ |  |
+| 9.8 | Amphur ID | propertyAmphurID | Asset_Amphur_ID__c | Text(255) |  |  | รหัสอำเภอ |  |
+| 9.9 | Province | propertyProvince | Asset_Province__c | Text(255) |  |  | จังหวัด |  |
+| 9.10 | Province ID | propertyProvinceID | Asset_Province_ID__c | Text(255) |  |  | รหัสจังหวัด |  |
+| 9.11 | Zip Code | propertyZipCode | Asset_Zip_Code__c | Text(10) |  |  | รหัสไปรษณีย์ |  |
+| 9.12 | Owner Title | ownerTitle | Title__c | Text(255) |  |  | คำนำหน้าชื่อ เจ้าของกรมธรรม์ |  |
+| 9.13 | Owner Title ID | ownerTitleID | Title_ID__c | Text(255) |  |  | รหัสคำนำหน้าชื่อ เจ้าของกรมธรรม์ |  |
+| 9.14 | Owner First Name | ownerFirstName | FirstName__c | Text(255) |  |  | ชื่อ เจ้าของกรมธรรม์ |  |
+| 9.15 | Owner Last Name | ownerLastName | LastName__c | Text(255) |  |  | นามสกุล เจ้าของกรมธรรม์ |  |
+| 9.16 | Owner Relation | ownerRelation | Relation__c | Text(50) |  |  | ความสัมพันธ์กับเจ้าของรถ เจ้าของกรมธรรม์ |  |
+| 9.17 | Owner Relation Code | ownerRelationID | Relation_ID__c | Text(50) |  |  | รหัสความสัมพันธ์กับเจ้าของรถ เจ้าของกรมธรรม์ |  |
+| 9.18 | Owner Birthday | ownerBirthday | Birthday__c | Date |  |  | วันเกิด เจ้าของกรมธรรม์ |  |
+| 9.19 | Owner Age | ownerAge | Age__c | Integer |  |  | อายุ เจ้าของกรมธรรม์ |  |
+| 9.20 | Owner Sex | ownerGender | Gender__c | Picklist |  |  | เพศ เจ้าของกรมธรรม์ |  |
+| 9.21 | Owner Occupation | ownerOccupation | Occupation__c | Text(255) |  |  | ตำแหน่งงาน เจ้าของกรมธรรม์ |  |
+| 9.22 | Owner ID Card | ownerIDCard | Id_Card__c | Text(255) |  |  | เลขที่บัตรประจำตัว เจ้าของกรมธรรม์ |  |
+| 9.23 | Owner ID Card Type Text | ownerIDCardTypeText | Id_Type__c | Text(255) |  |  | ประเภทบัตรประจำตัว เจ้าของกรมธรรม์ |  |
+| 9.24 | Owner ID Card Type Code | ownerIDCardTypeCode | Id_Type_ID__c | Text(255) |  |  | รหัสประเภทบัตรประจำตัว เจ้าของกรมธรรม์ |  |
+| 9.25 | Owner ID Card Expiry Date | ownerIDCardExpiryDate | Id_Card_Expired__c | Date |  |  | วันที่บัตรหมดอายุ เจ้าของกรมธรรม์ |  |
+| 9.26 | Owner Place | ownerAddress | Address__c | Text(255) |  |  | ที่อยู่ เจ้าของกรมธรรม์ |  |
+| 9.27 | Owner No | ownerNo | No__c | Text(255) |  |  | บ้านเลขที่ เจ้าของกรมธรรม์ |  |
+| 9.28 | Owner Moo | ownerMoo | Moo__c | Text(255) |  |  | หมู่ เจ้าของกรมธรรม์ |  |
+| 9.29 | Owner Soi | ownerSoi | Soi__c | Text(255) |  |  | ซอย เจ้าของกรมธรรม์ |  |
+| 9.30 | Owner Road | ownerRoad | Road__c | Text(255) |  |  | ถนน เจ้าของกรมธรรม์ |  |
+| 9.31 | Owner District | ownerDistrict | District__c | Text(255) |  |  | ตำบล เจ้าของกรมธรรม์ |  |
+| 9.32 | Owner District ID | ownerDistrictID | District_ID__c | Text(255) |  |  | รหัสตำบล เจ้าของกรมธรรม์ |  |
+| 9.33 | Owner Amphur | ownerAmphur | Amphur__c | Text(255) |  |  | อำเภอ เจ้าของกรมธรรม์ |  |
+| 9.34 | Owner Amphur ID | ownerAmphurID | Amphur_ID__c | Text(255) |  |  | รหัสอำเภอ เจ้าของกรมธรรม์ |  |
+| 9.35 | Owner Province | ownerProvince | Province__c | Text(255) |  |  | จังหวัด เจ้าของกรมธรรม์ |  |
+| 9.36 | Owner Province ID | ownerProvinceID | Province_ID__c | Text(255) |  |  | รหัสจังหวัด เจ้าของกรมธรรม์ |  |
+| 9.37 | Owner Zip Code | ownerZipCode | Zip_Code__c | Text(255) |  |  | รหัสไปรษณีย์ เจ้าของกรมธรรม์ |  |
+| 9.38 | Owner Tel No. | ownerTel | Tel__c | Text(40) |  |  | เบอร์โทรศัพท์ เจ้าของกรมธรรม์ |  |
+| 9.39 | Owner Fax No. | ownerFax | Fax__c | Text(40) |  |  | แฟกซ์ เจ้าของกรมธรรม์ |  |
+| 9.40 | Owner E-Mail | ownerEmail | Email__c | Text(80) |  |  | อีเมล เจ้าของกรมธรรม์ |  |
+|  | Time to Repaire | timeToRepair |  | Array |  |  |  |  |
+|  | IMAGE_PART | imagePart |  | Text(1000) |  |  | รุปรับรถ |  |
+|  | REP_TIME_COMMENT | repTimeComment |  | Text(2000) |  |  | หมายเหตุ |  |
+|  | DATE_REPAIR | dateRepaire |  | Decimal(10, 0) |  |  | จำนวนวันที่ซ่อม |  |
+|  | EST_REPAIR_DATE |  |  | DateTime |  |  | วันที่คาดว่าจะซ่อมเสร็จ |  |
+|  | EDIT_EST_REPAIR_DATE |  |  | DateTime |  |  | วันที่คาดว่าจะซ่อมเสร็จที่ถูกแก้ไข |  |
+
+### Example / Code Payload (Row 213)
+**Example Request (Vehicle)**
+```json
+[
+  {
+    "claimId": "",
+    "coverageID": "",
+    "policyNumber": "MV-0023-E-004077",
+    "itemNo": 1,
+    "claimCoverageType": "TV",
+    "losscode": [
+      {
+        "lossType": "Loss",
+        "locccodeID": "LOSSODL",
+        "amount": 5000
+      },
+      {
+        "lossType": "Loss",
+        "locccodeID": "LOSSODS",
+        "amount": 13000
+      },
+      {
+        "lossType": "Deduct",
+        "locccodeID": "OD Wrong Driver",
+        "amount": 2000,
+        "waiveFlag": "N",
+        "waiveAmount": 0,
+        "documentNo": "DOC001",
+        "documentDate": "2023-05-12",
+        "documentStatus": "Sent"
+      }
+    ],
+    "carDetail": {
+      "canRecovery": false,
+      "voluntaryPolicy": "MV-0023-E-005280",
+      "voluntaryCompanyBrCode": "000",
+      "voluntaryCompanyEntityID": "437511",
+      "voluntaryEffectiveDate": "2022-06-01",
+      "voluntaryExpiryDate": "2023-05-31",
+      "voluntaryClass": "1",
+      "voluntaryClaimNo": "CC-23-MV-00073",
+      "voluntaryTPPD": 100000,
+      "compulsoryPolicy": "MC-0023-E-005280",
+      "compulsoryCompanyBrCode": "000",
+      "compulsoryCompanyEntityID": "437511",
+      "compulsoryEffectiveDate": "2022-06-01",
+      "compulsoryExpiryDate": "2023-05-31",
+      "compulsoryClaimNo": "CC-23-MV-00073",
+      "carRegisterNo": "3กก3333",
+      "carProvince": "กรุงเทพมหานคร",
+      "carUnregister": false,
+      "carBrand": "11",
+      "carModel": "11_2",
+      "carColor": "3",
+      "chassisNo": "POR1MEEPOROBO1123",
+      "engineNo": "POR1MEEPOROBO1123"
+    }
+  }
+]
+```
+
+### Example / Code Payload (Row 214)
+**Example Request (Injury)**
+```json
+[
+  {
+    "claimId": "",
+    "coverageID": "",
+    "policyNumber": "MV-0023-E-004077",
+    "itemNo": 1,
+    "claimCoverageType": "DV",
+    "losscode": [
+      {
+        "lossType": "Loss",
+        "locccodeID": "LOSSTPBIM",
+        "amount": 2300
+      },
+      {
+        "lossType": "Loss",
+        "locccodeID": "LOSSTPBIH",
+        "amount": 700
+      }
+    ],
+    "injuryDetail": {
+      "personType": "DV",
+      "personTypeText": "Driver",
+      "title": "นาย",
+      "titleID": "1",
+      "firstname": "สวย",
+      "lastname": "ดูดี",
+      "relation": "น้องสาว",
+      "relationID": "7",
+      "birthday": "1990-02-12",
+      "age": 33,
+      "gender": "Male",
+      "occupation": "พนักงานบริษัท",
+      "idCard": "9605967735265",
+      "idType": "บัตรประชาชน",
+      "idTypeCode": "1",
+      "idCardExpiryDate": "2030-02-12"
+    }
+  }
+]
+```
+
+### Example / Code Payload (Row 215)
+**Example Request (Property)**
+```json
+[
+  {
+    "claimId": "",
+    "coverageID": "",
+    "policyNumber": "MV-0023-E-004077",
+    "itemNo": 1,
+    "claimCoverageType": "TP",
+    "losscode": [
+      {
+        "lossType": "Loss",
+        "locccodeID": "LOSSTPPDL",
+        "amount": 4000
+      },
+      {
+        "lossType": "Loss",
+        "locccodeID": "LOSSTPPDS",
+        "amount": 30000
+      }
+    ],
+    "propertyDetail": {
+      "propertyType": "ประตูบ้าน",
+      "address": "1 ดอนทราย ปากท่อ ราชบุรี",
+      "soi": "8",
+      "district": "คลองสาน",
+      "districtID": "567",
+      "amphur": "คลองสาน",
+      "amphurID": "2",
+      "province": "กรุงเทพมหานคร",
+      "provinceID": "209",
+      "zipCode": "10600",
+      "country": "ประเทศไทย",
+      "countryID": "1",
+      "ownerName": "สวย ดูดี",
+      "phone": "094124211"
+    }
+  }
+]
+```
+
+### Example / Code Payload (Row 216)
+**Example Request (Expense)**
+```json
+[
+  {
+    "claimId": "",
+    "coverageID": "",
+    "policyNumber": "MV-0023-E-004077",
+    "claimCoverageType": "ON",
+    "losscode": [
+      {
+        "lossType": "Expense",
+        "locccodeID": "AW",
+        "amount": 1000
+      },
+      {
+        "lossType": "Expense",
+        "locccodeID": "EO",
+        "amount": 2000
+      }
+    ]
+  }
+]
+```
+
+| No | Update Payment | Col3 | Col4 | Col5 | Col6 | Col7 | Col8 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+|  | Source - Field Name | Source - Field Name (Service Model) | SF Field | Type | External Key | Required Field | Remark |
+| 1 | Status Code | statuscode |  | Text(10) |  | Y |  |
+| 2 | Message | message |  | Text(1000) |  | Y |  |
+| 3 | Time Stamp | timeStamp |  | Datetime |  | Y |  |
+| 4 | Result | result |  | Array |  | Y |  |
+| 4.1 | Coverage Number | coverageID | External_Id__c | Text(20) | Y |  | eClaim |
+| 4.2 | Is Success | isSuccess |  | Boolean |  |  |  |
+| 4.3 | Error Message | errorMessage |  | Text(2000) |  |  |  |
+
+### Example / Code Payload (Row 226)
+**Example Response
+(Success)**
+```json
+{
+  "statuscode": "0000",
+  "message": "Success",
+  "timestamp": "2022-01-28T11:24:53",
+  "result": [
+    {
+      "claimCovId": "VPCNC2200007",
+      "isSuccess": true,
+      "errorMessage": null
+    },
+    {
+      "claimCovId": "VPCNC2200008",
+      "isSuccess": true,
+      "errorMessage": null
+    }
+  ]
+}
+```
+
+### Example / Code Payload (Row 227)
+**Example Response
+(Error)**
+```json
+{
+  "statuscode": "1000",
+  "message": "Create/Update data partial complete.",
+  "timestamp": "2022-01-28T11:24:53",
+  "result": [
+    {
+      "claimCovId": "VPCNC2200007",
+      "isSuccess": true,
+      "errorMessage": null
+    },
+    {
+      "claimCovId": "VPCNC2200008",
+      "isSuccess": false,
+      "errorMessage": "Some Error Message"
+    }
+  ]
+}
+```
