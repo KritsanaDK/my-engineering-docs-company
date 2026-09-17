@@ -8,10 +8,10 @@
 
 | ระดับความสำคัญ (Priority)      | จำนวน (Count) | รายการปัญหา (Issues Included)                                                                                                              | ผลกระทบหลัก (Key Impact)                                                                                                               |
 | :----------------------------- | :-----------: | :----------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0 - Critical** (ด่วนที่สุด) |     **6**     | Issue #7, Issue #10, **Issue #13**, **Issue #16**, **Issue #18**, **Issue #21** <br>_(+ 3 เคสจริง: Lead 255955, Lead 257307, Lead 258748)_ | 2C2P Callback Panic เงินตัดแต่ E-Policy ไม่ออก / UAM Email-OTP ล่มทั้งระบบ / จ่ายต่ออายุไม่ได้ / Lead ซ้ำ 148 ครั้ง / เสี่ยงตัดเงินซ้ำ |
-| **P1 - High** (สำคัญสูง)       |    **10**     | Issue #1, Issue #2, Issue #3, Issue #5, Issue #8, Issue #9, **Issue #14**, **Issue #15**, **Issue #17**, **Issue #19**                     | IIA Silent Fail / SF ขาดกรมธรรม์หลัก / CMI ปฏิเสธทะเบียน / Shortener ติด WAF / ส่ง PDF เมลไม่ผ่าน / SF API ตัด 30s                     |
-| **P2 - Medium** (สำคัญปานกลาง) |     **5**     | Issue #4, Issue #6, Issue #11, Issue #12, **Issue #20**                                                                                    | Replica Lag / สลักหลังไม่ออก / ส่ง SMS ผิด / Home 500 เงียบ / Cloud SQL CPU Spike 17:00 SOP                                            |
-| **รวมทั้งหมด (Total)**         |    **21**     | **21 ปัญหาเชิงระบบ + 3 Incident เคสจริง**                                                                                                  | ครอบคลุม Purchase, Policy, UAM, Premium, SF, Lead-Policy, Document, Notification, Cloud SQL                                            |
+| **P0 - Critical** (ด่วนที่สุด) |     **8**     | Issue #7, Issue #10, **Issue #13**, **Issue #16**, **Issue #18**, **Issue #21**, **Issue #22**, **Issue #26** <br>_(+ 3 เคสจริง: Lead 255955, Lead 257307, Lead 258748)_ | 2C2P Callback 502 ปิดสายหนี / SMTP TLS ล่ม E-Policy ส่งไม่ออก 591 ราย / 2C2P Panic เงินตัดแต่ E-Policy ไม่ออก / UAM ล่ม |
+| **P1 - High** (สำคัญสูง)       |    **12**     | Issue #1, Issue #2, Issue #3, Issue #5, Issue #8, Issue #9, **Issue #14**, **Issue #15**, **Issue #17**, **Issue #19**, **Issue #23**, **Issue #27** | IIA Silent Fail / SF ขาดกรมธรรม์หลัก / CMI ปฏิเสธทะเบียน / OCR Passport DNS / OpenAPI Motor เบี้ยพัง / Shortener ติด WAF                |
+| **P2 - Medium** (สำคัญปานกลาง) |     **7**     | Issue #4, Issue #6, Issue #11, Issue #12, **Issue #20**, **Issue #24**, **Issue #25**                                                    | Replica Lag / สลักหลังไม่ออก / ส่ง SMS ผิด / Cloud SQL CPU Spike / LB 503 ((no backend)) / CORS Preflight 503                            |
+| **รวมทั้งหมด (Total)**         |    **27**     | **27 ปัญหาเชิงระบบ + 3 Incident เคสจริง**                                                                                                  | ครอบคลุม Purchase, Policy, UAM, Premium, SF, Lead-Policy, Document, Notification, Cloud SQL, OAuth, Analytics, OpenAPI                     |
 
 ---
 
@@ -40,6 +40,12 @@
 | **19** | **P1** | **Salesforce API โดน GCP LB ตัด 30s** _(SF Endorsement Waterfall Timeout)_ | `saleforce-service` | ⏳ **อยู่ที่ uat-isv (WS6)** | งานปรับลด Waterfall อยู่ใน WS6 บน uat-isv (GCP LB Timeout ยังเป็น 30s) |
 | **20** | **P2** | **Cloud SQL CPU Spike 17:00 SOP** _(EOD Batch vs Deploy Diagnostic)_ | Cloud SQL (`insureverse-prod`) | ℹ️ **SOP คู่มือปฏิบัติการ** | CPU พุ่ง 28.4% (ปกติ 8.48%) SOP ให้เช็ค Query Insights ก่อนสรุปว่าเกิดจาก Deploy |
 | **21** | **P0** | **2C2P Callback Panic จาก Type Assertion** _(Salesforce Auth Nil Panic)_ | `purchase-service` | ❌ **ยังไม่แก้บน Prod (วิกฤต)** | `saleforce.go:75` ไม่เช็ค nil เมื่อ SF ล่ม Panic กลาง Callback เงินตัดแต่กรมธรรม์ไม่ออก |
+| **22** | **P0** | **ต่อ TLS ไม่ผ่าน (ใบรับรองไม่ถูก trust) — อีเมลกรมธรรม์ส่งไม่ออก** _(SMTP TLS Unknown Authority)_ | `notification-service` | ❌ **ยังพังอยู่บน Prod (วิกฤต)** | ต่อ SMTP ไม่ได้ x509 unknown authority ลูกค้าไม่ได้รับ E-Policy ตั้งแต่ 10:25 (75 ครั้ง/30m, รวม 591 ฉบับ) |
+| **23** | **P1** | **OCR Passport Reader ล่มจาก DNS NXDOMAIN** _(OCR MRZ DNS Fail)_ | `uam-service` | ❌ **ยังไม่แก้บน Prod** | สแกน Passport OCR ไม่ได้ (500) DNS หา `api.ekycsolution.com` ไม่เจอ (no such host) |
+| **24** | **P2** | **GCP LB 503 ((no backend)) บน Partner Token** _(OAuth2 NEG Drop)_ | `openapi-oauth-service` | ❌ **ยังไม่แก้บน Prod** | LB หา Pod ไม่เจอ ตอบ 503 ไร้ Log ใน Service จาก Readiness Delay 60s / Mem Limit 128Mi |
+| **25** | **P2** | **CORS OPTIONS 503 ((no backend)) บน Analytics** _(Analytics Preflight Drop)_ | `backend-analytics-service` | ❌ **ยังไม่แก้บน Prod** | Browser Preflight ติด 503 บล็อกการยิง Event จาก Readiness Probe 60s |
+| **26** | **P0** | **2C2P Callback 502 Pod ปิดสายหนี (3.1s)** _(2C2P Callback TCP Drop)_ | `purchase-service` | ❌ **ยังไม่แก้บน Prod (วิกฤต)** | 2C2P ได้ 502 จาก `backend_connection_closed` เสี่ยงเงินตัดแต่กรมธรรม์ไม่ออก |
+| **27** | **P1** | **OpenAPI Motor เบี้ยพัง ได้รับ HTML `<` (503)** _(OpenAPI Hairpin HTML Parse Fail)_ | `openapi-motor-service` | ❌ **ยังไม่แก้บน Prod** | Partner ขอเบี้ย/สร้าง Lead ไม่ได้ (503) โค้ดพังจาก HTML หน้า WAF/LB แทน JSON (106ms) |
 
 ### 📌 สรุปสถานะสภาพแวดล้อม (Environment Status Summary)
 
@@ -48,9 +54,9 @@
 | **✅ แก้แล้วบน Production (WS1–WS5)** | **4 ข้อ** | **Issue #5, #7, #8, #14** | แก้ไขปัญหา Concurrency ในระดับ DB Stored Procedure (`fn_lead_to_car_act`, `fn_policy_invoiceno_iia`) และ Reconcile IIA/CMI เรียบร้อยแล้วบน Prod |
 | **⏳ อยู่ที่ UAT-ISV (OIC / WS6–WS9 / Hotfix)** | **5 ข้อ** | **Issue #3, #11, #13, #18, #19** | โค้ดและสคริปต์แก้เสร็จแล้ว อยู่ระหว่างทดสอบบน `uat-isv` รอคิว Deploy ขึ้น Prod (เช่น SF Endorsement, Renewal 90 วัน, Motor Lead Sequence) |
 | **⚠️ ดำเนินการแก้ปัญหาเฉพาะหน้า (Manual Ops)** | **2 ข้อ** | **Issue #2, #14 (กรณีตกหล่น)** | การรวม/ลบ Duplicate Record ใน Salesforce หรือรัน SQL ปรับฟอร์แมตทะเบียนรถเป็นรายเคส |
-| **❌ ยังไม่ได้แก้ไขบน Production (ค้าง 100%)** | **10 ข้อ** | **Issue #1, #4, #6, #9, #10, #12, #15, #16, #17, #21** | โค้ด/คอนฟิกบน Prod ยังไม่ได้รับการแก้ไข แนะนำทำ **Hotfix เร่งด่วน P0:** <br>• **#21:** แก้นิพจน์เช็ค nil ใน `saleforce.go:75` (หยุด 2C2P Callback Panic) <br>• **#16:** แก้ Helm Prod ของ `uam-service` ชี้ K8s Internal DNS (หยุด Email/OTP 500) <br>• **#13:** รัน Sequence Migration และปล่อย `nodejs-express-premium-service` ขึ้น Prod |
+| **❌ ยังไม่ได้แก้ไขบน Production (ค้าง 100%)** | **16 ข้อ** | **Issue #1, #4, #6, #9, #10, #12, #15, #16, #17, #21, #22, #23, #24, #25, #26, #27** | โค้ด/คอนฟิกบน Prod ยังไม่ได้รับการแก้ไข แนะนำทำ **Hotfix เร่งด่วน P0:** <br>• **#26 & #21:** ตรวจสอบ Lead 15:25 น. และแก้ Panic ใน 2C2P Callback <br>• **#22:** แก้ TLS Cert / CA ใน `backend-notification-service` (หยุด E-Policy ส่งไม่ออก 591 เคส) <br>• **#16:** แก้ Helm Prod ของ `uam-service` ชี้ K8s Internal DNS (หยุด Email/OTP 500) <br>• **#13:** รัน Sequence Migration และปล่อย `nodejs-express-premium-service` ขึ้น Prod |
 | **ℹ️ แนวทางปฏิบัติการ (Operational SOP)** | **1 ข้อ** | **Issue #20** | SOP ตรวจสอบ Cloud SQL CPU ช่วง 17:00 ให้เช็ค Query Insights แยกแยะ Daily Batch ก่อนตัดสินใจ Rollback |
-| **รวมทั้งหมด (Total)** | **21 ข้อ** | **ครอบคลุม 21 ปัญหาเชิงระบบ** | |
+| **รวมทั้งหมด (Total)** | **27 ข้อ** | **ครอบคลุม 27 ปัญหาเชิงระบบ** | |
 
 
 ---
@@ -727,4 +733,325 @@
          SELECT 1 FROM insurverse."Policy_Header" ph WHERE ph."Lead_No" = p."lead_no"
      )
    ORDER BY p."updated_at" DESC;
+   ```
+
+---
+
+### Issue #22: ต่อ TLS ไม่ผ่าน (ใบรับรองไม่ถูก trust) — อีเมลกรมธรรม์ส่งไม่ออก (SMTP TLS Unknown Authority)
+
+- **Log/ข้อความที่พบ:**
+  ```text
+  ต่อ TLS ไม่ผ่าน (ใบรับรองไม่ถูก trust) — อีเมลกรมธรรม์ส่งไม่ออก
+  กระทบ: ลูกค้าไม่ได้รับอีเมลกรมธรรม์ (E-Policy) หรือการเรียกบริการภายนอกล้ม
+  จำนวน: 75 ครั้งใน 30 นาที · ยอดสะสมล้มเหลว 591 ครั้ง (10:25–15:45) · ส่งสำเร็จ 0
+  สาเหตุ: backend-notification-service ต่อ SMTP ไม่ได้: tls: failed to verify certificate: x509: certificate signed by unknown authority — ใบรับรองของ mail server ไม่ถูก trust (เปลี่ยน cert / CA ฝั่ง mail server หรือมีตัวกลางดัก TLS)
+  หมายเหตุ: deploy notification-service (MR !99) เมื่อ 15:41 ไม่ใช่ต้นเหตุ — error เริ่มก่อน 5 ชั่วโมง และยังล้มต่อหลัง deploy
+  ต้องทำ: เช็ก cert ของ SMTP server / CA ใน image แล้วส่งอีเมลกรมธรรม์ซ้ำให้ลูกค้าที่ออกตั้งแต่ 10:25
+  ```
+- **ระดับความสำคัญ:** **P0 - Critical (E-Policy Delivery Broken Across All Lines of Business)**
+- **ระบบที่เกี่ยวข้อง:** `go-echo-notification-service` (`controllers/notificationController.go`, `constants/constant.go`, `Dockerfile`), SMTP Server (`mail.dhipaya.co.th:25` / SMTP Relay)
+- **ช่วงเวลาและผลกระทบ:**
+  - เริ่มเกิดอาการ: ตั้งแต่เวลา **10:25 น. (17 ก.ย. 2026)** จนถึงปัจจุบัน
+  - ปริมาณความเสียหาย: ส่งล้มเหลว **591 ครั้ง (10:25–15:45)** · ส่งสำเร็จ **0 ครั้ง** _(เมื่อวานช่วงเวลาเดียวกันส่งสำเร็จ 91 ครั้ง, ก่อนหน้านี้ไม่เคยพบ error นี้)_
+  - ผลกระทบทางธุรกิจ: ลูกค้าที่ออกกรมธรรม์ (พ.ร.บ. และประกันภัยรถยนต์ภาคสมัครใจ) ทุกรายไม่ได้รับอีเมลกรมธรรม์ (E-Policy) เข้ากล่องจดหมาย
+
+#### 🔍 รายละเอียดของปัญหาและการวิเคราะห์หาสาเหตุ (RCA & Problem Details)
+
+1. **การพิสูจน์ตัดประเด็น Deployment MR !99:**
+   - มีการ Deploy `notification-service` (MR !99) เมื่อเวลา 15:41 น.
+   - **ข้อเท็จจริง:** Error SMTP เกิดขึ้นสะสมตั้งแต่ 10:25 น. (ก่อนหน้าการ Deploy นานกว่า 5 ชั่วโมง) และยังคงล้มเหลวต่อเนื่องหลัง Deploy จึงสรุปได้ 100% ว่า **MR !99 ไม่ใช่ต้นเหตุของปัญหา**
+2. **สาเหตุทางเทคนิค (Technical Root Cause):**
+   - ใน `go-echo-notification-service/controllers/notificationController.go:342` มีการเรียกใช้:
+     ```go
+     d := mail.NewDialer(smtpHost, smtpPort, smtpUser, smtpPass)
+     ```
+   - ฟังก์ชัน `d.DialAndSend()` ของไลบรารี Go Mail จะทำการ Negotiate STARTTLS อัตโนมัติ โดยเรียก `crypto/tls` มาตรวจสอบความถูกต้องของ Certificate เทียบกับ System Root CA Bundle
+   - Container Image ถูกสร้างจาก `FROM gcr.io/distroless/base-debian11` ซึ่งมีเฉพาะ Root CA มาตรฐานสากล
+   - **จุดที่ล้มเหลว:** Mail Server ปลายทาง (`mail.dhipaya.co.th`) มีการเปลี่ยนหรือต่ออายุ Certificate ใหม่ที่เป็น Internal Enterprise CA / Self-signed หรือ Intermediate CA ใน Chain ไม่ครบถ้วน หรือมี Network Gateway/Firewall ดักจับ TLS Traffic ทำให้ Go ตัดการเชื่อมต่อทันทีด้วยข้อผิดพลาด `x509: certificate signed by unknown authority`
+
+#### 🛠️ การแก้ไขปัญหาและการฟื้นฟูระบบ (Resolution & Recovery)
+
+1. **การตรวจสอบ Certificate Chain จาก Pod จริง (Investigation Command):**
+   ```bash
+   # ตรวจสอบ Certificate และ Chain ที่ส่งมาจาก SMTP Server
+   openssl s_client -connect mail.dhipaya.co.th:25 -starttls smtp -showcerts
+   ```
+2. **แนวทางแก้ไขด่วนใน Go Code (Emergency Hotfix):**
+   - เปิดให้อ่านค่า `SMTP_INSECURE_SKIP_VERIFY` ผ่าน Environment Variable เพื่อรองรับกรณีฉุกเฉิน:
+     ```go
+     d := mail.NewDialer(smtpHost, smtpPort, smtpUser, smtpPass)
+     if os.Getenv("SMTP_INSECURE_SKIP_VERIFY") == "true" {
+         d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+     }
+     ```
+3. **แนวทางแก้ไขถาวรด้าน Security (Permanent Enterprise CA Fix):**
+   - นำไฟล์ `.crt` ของ Enterprise CA เพิ่มเข้าไปใน Distroless Image หรือ Mount ผ่าน Kubernetes Secret ไปยัง `/etc/ssl/certs/`
+4. **สคริปต์ SQL ดึงรายชื่อกรมธรรม์ที่ต้องยิง Resend อีเมล (Data Recovery SQL):**
+   ```sql
+   -- ค้นหากรมธรรม์ที่ออกตั้งแต่ 10:25 วันที่ 17 ก.ย. 2026 เพื่อเตรียมส่งอีเมล E-Policy ซ้ำ
+   SELECT 
+       ph."Policy_No",
+       ph."Lead_No",
+       ph."id_card",
+       ph."email",
+       ph."car_license_no",
+       ph."Policy_Startdate",
+       ph."created_at"
+   FROM insurverse."Policy_Header" ph
+   WHERE ph."created_at" >= '2026-09-17 10:25:00'
+   ORDER BY ph."created_at" ASC;
+   ```
+
+---
+
+### Issue #23: OCR Passport Reader ล่มจาก DNS NXDOMAIN (eKYC MRZ Service Unavailable)
+
+- **Log/ข้อความที่พบ:**
+  ```text
+  HTTP 500 (error ในโค้ด) · backend-uam-service · 15:19
+  POST /api/v1/uam/ocr_passport_reader_service · 2 ครั้งใน 7 นาที · ใช้เวลา 59 ms
+  ERROR HTTPCustoms : HTTP request failed error="Post \"https://api.ekycsolution.com/api/MRZService\": dial tcp: lookup api.ekycsolution.com on <ip>:53: no such host"
+  ```
+- **ระดับความสำคัญ:** **P1 - High (OCR KYC Feature Broken / Unhandled Downstream Error)**
+- **ระบบที่เกี่ยวข้อง:** `go-echo-uam-service` (`controllers/ekycController.go:943`, `constants/constant.go`, `helm/helm-prod.yaml`)
+- **ช่วงเวลาและผลกระทบ:**
+  - เวลาที่เกิดเหตุ: **15:19 น. (17 ก.ย. 2026)**
+  - ความถี่: พบ 2 ครั้งใน 7 นาที อัตรา Response Time เร็วมาก (59 ms) เนื่องจาก DNS lookup fail ทันที
+  - ผลกระทบต่อผู้ใช้: ลูกค้าที่อัปโหลดรูปหนังสือเดินทาง (Passport) เพื่อทำ OCR สกัดข้อมูลสำหรับซื้อประกัน ไม่สามารถอ่านข้อมูลอัตโนมัติได้ ทำให้หน้าบ้านได้รับ HTTP 500 และบังคับให้ผู้ใช้ต้องพิมพ์กรอกข้อมูลเองแบบ Manual
+
+#### 🔍 รายละเอียดของปัญหาและการวิเคราะห์หาสาเหตุ (RCA & Problem Details)
+
+1. **DNS Resolution Failure (NXDOMAIN):**
+   - ใน `helm/helm-prod.yaml` กำหนดค่า:
+     ```yaml
+     - name: URL_YIP_Passport
+       value: https://api.ekycsolution.com/api/MRZService
+     ```
+   - จากการทดสอบตรวจสอบ DNS ระดับโลก (`nslookup api.ekycsolution.com`) พบว่าโดเมน **ไม่มีอยู่ในสารบบ DNS (NXDOMAIN: Non-Existent Domain)** ทำให้ Kubernetes DNS (`<ip>:53`) ตอบกลับทันทีว่า `no such host`
+   - สาเหตุอาจเกิดจาก Third-party Provider (Yipinsoi / eKYC Solution) ไม่ได้ต่ออายุ Domain, เกิด DNS Outage ฝั่งผู้ให้บริการ, หรือมีการเปลี่ยนแปลง Hostname ปลายทางโดยไม่ได้แจ้งล่วงหน้า
+2. **Missing Graceful Degradation in Application Code:**
+   - ใน `go-echo-uam-service/controllers/ekycController.go:943-954`:
+     ```go
+     res, err := helper.HTTPCustoms(&input)
+     if err != nil {
+         logYipinsoi.ResponseStatus = http.StatusInternalServerError
+         logYipinsoi.ResponseBody = err.Error()
+         ...
+         slog.Error("/api/v1/uam/ocr_passport_reader_service", "Error calling PassportMRZ : ", err)
+         return c.JSON(http.StatusInternalServerError, models.JsonReturn{})
+     }
+     ```
+   - เมื่อ Endpoint ภายนอกล้มเหลว โค้ดส่ง `HTTP 500 Internal Server Error` กลับไปที่ Frontend ทันที โดยไม่มี Message อธิบาย และไม่มี Fallback Signal ทำให้ Frontend แสดง Error Popup แทนที่จะสลับไปหน้ากรอกข้อมูล Manual อย่างราบรื่น
+
+#### 🛠️ การแก้ไขปัญหาและการฟื้นฟูระบบ (Resolution & Recovery)
+
+1. **Vendor Triage & Domain Verification:**
+   - ติดต่อผู้ให้บริการ (Yipinsoi / eKYC Solution) เพื่อยืนยันว่า Domain `api.ekycsolution.com` ใช้งาน URL ใด หรือมีการย้ายไปใช้ IP/Domain ใด (เช่น `uat.ekycsolution.com` หรือ Domain ภายใน)
+2. **Code Graceful Degradation ใน `ekycController.go`:**
+   - ปรับปรุง Error Handling ให้คืน HTTP 200 หรือ HTTP 503 พร้อม JSON ที่ระบุสถานะให้ชัดเจน เพื่อให้หน้าบ้านแนะนำผู้ใช้กรอกข้อมูลเองโดยไม่ทำให้ Flow สะดุด:
+     ```diff
+     -	return c.JSON(http.StatusInternalServerError, models.JsonReturn{})
+     +	return c.JSON(http.StatusOK, map[string]interface{}{
+     +		"status":      http.StatusOK,
+     +		"is_success":  false,
+     +		"can_manual":  true,
+     +		"description": "OCR service temporarily unavailable, please enter details manually",
+     +	})
+     ```
+3. **ตรวจสอบ Endpoint OCR อื่นๆ:**
+   - ตรวจสอบว่า `URL_YIP_OCRService` (`https://api.ekycsolution.com/api/OCRService`) และ `URL_YIP_FaceRecogService` ได้รับผลกระทบจาก Domain ล่มเช่นเดียวกันหรือไม่
+
+---
+
+### Issue #24: GCP LB 503 ((no backend)) บน Partner OAuth2 Token (Zero Pod Ready)
+
+- **Log/ข้อความที่พบ:**
+  ```text
+  HTTP 503 POST /services/oauth/v2/token ((no backend))
+  1x in 8m, last 12:39, took 0.521599s | cause: no error line logged by the service around the response
+  ```
+- **ระดับความสำคัญ:** **P2 - Medium (Ingress Zero-Backend Dropout / Partner Token Handshake Failure)**
+- **ระบบที่เกี่ยวข้อง:** `openapi-oauth-service` (`go-oauth2-server`), GCP External HTTP(S) Load Balancer, Container-Native NEG
+- **ช่วงเวลาและผลกระทบ:**
+  - เวลาที่เกิดเหตุ: **12:39 น. (17 ก.ย. 2026)**
+  - ความถี่: เกิด 1 ครั้งในรอบ 8 นาที ใช้เวลา 0.52 วินาที (521 ms)
+  - ผลกระทบต่อผู้ใช้: พันธมิตรทางธุรกิจภายนอก (B2B Partners เช่น Shopee, Kerry) ไม่สามารถขอ Access Token สำหรับยิง API ส่ง Lead ประกันภัยเข้าสู่ระบบได้ในช่วงเวลาดังกล่าว
+
+#### 🔍 รายละเอียดของปัญหาและการวิเคราะห์หาสาเหตุ (RCA & Problem Details)
+
+1. **ทำไมใน Container ถึงไม่มี Error Log? (The Missing Log Mystery):**
+   - ข้อความ **`((no backend))`** เป็น Error String เฉพาะของ **Google Cloud HTTP(S) Load Balancer**
+   - เกิดขึ้นเมื่อ LB พยายามส่งต่อ Request ไปยัง Network Endpoint Group (NEG) แต่ในขณะนั้น **ไม่มี Pod ใดใน Kubernetes ที่อยู่ในสถานะ Healthy/Ready เลย (0 Ready Endpoints)**
+   - GCP LB พยายามรอ Connection นาน 0.52 วินาที แล้วตัดสายตอบกลับ HTTP 503 ทันที
+   - เนื่องจาก **Request ถูกตัดที่ระดับ Load Balancer จึงไม่เคยวิ่งไปถึง Pod** ทำให้ Fiber Engine ภายใน `go-oauth2-server` ไม่มีการบันทึก Log ใดๆ
+2. **ทำไม Pod ใน NEG ถึงหายไปชั่วคราวตอน 12:39 น.? (Root Cause):**
+   - เมื่อตรวจสอบไฟล์ [helm-prod.yaml](file:///Users/kritsanawathaniyanon/Code/Go/go-oauth2-server/helm/helm-prod.yaml) พบจุดเปราะบาง 2 จุดหลัก:
+     1. **Memory Limit ต่ำมาก (`memory: 128Mi`):** Go Runtime และ Fiber Framework หากมีทราฟฟิกพุ่งสูง หรือจังหวะคืน Memory ช้า จะทำให้ Pod ถูกเคอร์เนลสั่งฆ่าด้วยสถานะ **OOMKilled (Exit Code 137)** ทันที
+     2. **Readiness Probe ดีเลย์สูงเกินไป (`initialDelaySeconds: 60`):** เมื่อ Pod รีสตาร์ต Kubernetes จะรอถึง **60 วินาที** ก่อนเริ่มตรวจสอบความพร้อม ทำให้เกิดช่วงสูญญากาศ (Dead Zone) ที่ Load Balancer ไม่มี Pod สำรองใช้งาน ส่งผลให้เกิด HTTP 503 `((no backend))`
+
+#### 🛠️ การแก้ไขปัญหาและการป้องกันระยะยาว (Resolution & Hardening)
+
+1. **คำสั่งตรวจสอบสถานะ Pod และประวัติ OOMKill บน Cluster:**
+   ```bash
+   # ตรวจสอบว่ามี Pod โดน Restart หรือ OOMKill หรือไม่
+   kubectl -n production describe pod -l app=openapi-oauth-service | grep -E "(Restart Count|Last State|OOMKilled|Terminated)"
+   ```
+2. **ปรับปรุง Resource Limits และ Probes ใน `helm-prod.yaml`:**
+   ```diff
+    resources:
+      requests:
+        cpu: 50m
+   -    memory: 64Mi
+   +    memory: 128Mi
+      limits:
+   -    cpu: 100m
+   -    memory: 128Mi
+   +    cpu: 200m
+   +    memory: 256Mi
+    
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 3000
+   -  initialDelaySeconds: 60
+   +  initialDelaySeconds: 15
+      timeoutSeconds: 3
+      periodSeconds: 8
+   ```
+3. **เพิ่ม Lifecycle Hook `preStop` เพื่อทำ Graceful Draining:**
+   - เพิ่ม `lifecycle.preStop.exec.command: ["sleep", "5"]` เพื่อให้ Pod ยังรับ Request เดิมจนจบก่อนถูกดึงออกจาก Ingress NEG
+
+---
+
+### Issue #25: CORS OPTIONS 503 ((no backend)) บน Analytics Service (Preflight NEG Drop)
+
+- **Log/ข้อความที่พบ:**
+  ```text
+  HTTP 503 OPTIONS /api/v1/analytics/analytics ((no backend))
+  1x in 8m, last 12:19, took 1.141599s | cause: no error line logged by the service around the response
+  ```
+- **ระดับความสำคัญ:** **P2 - Medium (Frontend CORS Preflight Failure / Data Loss)**
+- **ระบบที่เกี่ยวข้อง:** `backend-analytics-service` ([go-echo-analytics-service](file:///Users/kritsanawathaniyanon/Code/Go/go-echo-analytics-service/helm/helm-prod.yaml)), GCP External HTTP(S) Load Balancer
+- **ช่วงเวลาและผลกระทบ:**
+  - เวลาที่เกิดเหตุ: **12:19 น. (17 ก.ย. 2026)**
+  - ความถี่: พบ 1 ครั้งใน 8 นาที ใช้เวลา 1.14 วินาที (1,141 ms)
+  - ผลกระทบต่อผู้ใช้: คำขอ `OPTIONS` คือ Browser CORS Preflight เมื่อตอบกลับด้วย HTTP 503 เบราว์เซอร์จะบล็อกคำขอ `POST /api/v1/analytics/analytics` ทันที และพ่น CORS Policy Error ใน Console ทำให้ Event พฤติกรรมผู้ใช้สูญหาย
+
+#### 🔍 รายละเอียดของปัญหาและการวิเคราะห์หาสาเหตุ (RCA & Problem Details)
+
+1. **สาเหตุที่ Service ไม่มี Error Log:**
+   - สถานะ `((no backend))` เกิดจาก GCP Load Balancer ไม่พบ Pod ที่พร้อมรับงานใน Network Endpoint Group (NEG) ในจังหวะที่เบราว์เซอร์ส่ง Preflight เข้ามา LB พยายามรอ Connection ครบ 1.14 วินาทีแล้วตัดสายตอบ 503 ทันที Request จึงไม่เคยไปถึง Container Pod
+2. **สาเหตุเชิงโครงสร้างใน Helm Config (Systemic Pattern เดียวกับ Issue #24):**
+   - ใน `helm-prod.yaml` กำหนดค่า:
+     ```yaml
+     readinessProbe:
+       httpGet:
+         path: /healthcheck
+         port: 8080
+       initialDelaySeconds: 60
+     ```
+   - การตั้ง `initialDelaySeconds: 60` สูงเกินไป ทำให้เมื่อ Pod มีการรีสตาร์ตหรือเกิด Node Rolling Update ตัว Pod ใหม่จะไม่ถูกเพิ่มเข้า NEG เป็นเวลานานกว่า 1 นาที ส่งผลให้เกิด Dead Zone ที่ LB ไม่มี Endpoint ส่งงาน
+
+#### 🛠️ การแก้ไขปัญหาและการป้องกันระยะยาว (Resolution & Hardening)
+
+1. ปรับลด `readinessProbe.initialDelaySeconds` ใน `helm-prod.yaml` จาก 60 วินาที เหลือ **15 วินาที**
+2. เพิ่ม `lifecycle.preStop.exec.command: ["sleep", "5"]` เพื่อป้องกันการดึง Pod ออกจาก Ingress ก่อน Connection เดิมประมวลผลเสร็จ
+
+---
+
+### Issue #26: 2C2P Callback 502 Pod ปิดสายหนี (backend_connection_closed)
+
+- **Log/ข้อความที่พบ:**
+  ```text
+  HTTP 502 (pod ไม่ตอบ/หมดเวลา) · backend-purchase-service · 15:25
+  POST /api/v1/purchase/callback · 1 ครั้งใน 8 นาที · ใช้เวลา 3.1 วินาที
+  สาเหตุ: load balancer ติดต่อ pod ไม่ได้ — pod อาจกำลัง restart หรือปิดการเชื่อมต่อก่อน (backend_connection_closed_before_data_sent_to_client)
+  ```
+- **ระดับความสำคัญ:** **P0 - Critical (Payment Webhook Disruption / Risk of Phantom Success)**
+- **ระบบที่เกี่ยวข้อง:** `go-echo-purchase-service` (`controllers/paymentController.go`, `thirdparty/saleforce.go`), 2C2P Payment Gateway, GCP Load Balancer
+- **ช่วงเวลาและผลกระทบ:**
+  - เวลาที่เกิดเหตุ: **15:25 น. (17 ก.ย. 2026)**
+  - ผลกระทบ: 2C2P ส่ง Callback ยืนยันการตัดเงินของลูกค้าเข้ามา แต่ได้รับ HTTP 502 กลับไป ทำให้ 2C2P ทำการยิง Retry ซ้ำ และมีความเสี่ยงสูงที่ลูกค้าถูกตัดเงินแล้วแต่การสร้าง E-Policy / IIA / อีเมลถูกตัดตอนกลางคัน
+
+#### 🔍 รายละเอียดของปัญหาและการวิเคราะห์หาสาเหตุ (RCA & Problem Details)
+
+1. **ทำไม Load Balancer แจ้ง `backend_connection_closed_before_data_sent_to_client` (3.1s)?**
+   - อาการนี้เกิดขึ้นเมื่อ Load Balancer เชื่อมต่อกับ Pod สำเร็จและกำลังรอ Response Body แต่จู่ๆ **Pod ฝั่ง Backend ทำการปิด TCP Socket ทิ้งกะทันหัน** ก่อนส่ง Response Header/Body
+   - ใน Go `net/http` พฤติกรรมนี้เกิดขึ้นได้จาก 2 กรณีหลัก:
+     1. **Go Runtime Panic:** เกิด Panic ภายใน Goroutine ของ Callback โดยไม่มี `middleware.Recover()` ดักจับ (ลักษณะเดียวกับ **Issue #21: Salesforce Auth Nil Panic**) ตัว Server จะตัดสาย TCP ทันที
+     2. **OOMKilled หรือ Pod Crash:** Pod กิน Memory เกินขีดจำกัดจน Kernel สั่ง SIGKILL ดับกะทันหันขณะกำลังทำงาน
+2. **ความเชื่อมโยงกับเวลา 3.1 วินาที:**
+   - เวลา 3.1 วินาทีชี้ชัดว่าคำขอไม่ได้ตายตั้งแต่ต้นทาง แต่ได้ทำงานไปแล้วบางส่วน (เช่น บันทึก `payment_status = SUCCESS` ลงฐานข้อมูล และเริ่มเรียก Salesforce หรือ IIA) ก่อนจะเกิด Panic หรือถูกตัดสาย
+
+#### 🛠️ การตรวจสอบด่วนและการกู้คืน (Immediate Triage & Recovery)
+
+1. **ค้นหา Lead ที่ถูกตัดเงินเวลา 15:20–15:30 น. ทันที (Data Integrity SQL):**
+   ```sql
+   -- ตรวจสอบเคสที่ 2C2P Callback เข้ามาตอน 15:25 น. ว่าเงินตัดสำเร็จแต่กรมธรรม์ออกครบหรือไม่
+   SELECT 
+       p."lead_no", 
+       p."invoice_no", 
+       p."amount", 
+       p."payment_status", 
+       p."updated_at",
+       ph."Policy_No"
+   FROM insurverse.payment p
+   LEFT JOIN insurverse."Policy_Header" ph ON ph."Lead_No" = p."lead_no"
+   WHERE p."updated_at" BETWEEN '2026-09-17 15:20:00' AND '2026-09-17 15:30:00'
+   ORDER BY p."updated_at" DESC;
+   ```
+2. **หากพบว่า `payment_status = 'SUCCESS'` แต่ `Policy_No IS NULL`:**
+   - ให้ดำเนินการ Re-trigger Flow การออกกรมธรรม์ทันที เพื่อป้องกันลูกค้าได้รับผลกระทบ
+3. **การแก้ไขเชิงป้องกันถาวร (Permanent Fix):**
+   - เร่งปล่อย Hotfix ป้องกัน Panic ใน `thirdparty/saleforce.go` และลงทะเบียน `middleware.Recover()` ใน `main.go` ตามแนวทางของ **Issue #21**
+
+---
+
+### Issue #27: OpenAPI Motor Premium 503 (HTML Unmarshal Error via Hairpin Loop)
+
+- **Log/ข้อความที่พบ:**
+  ```text
+  HTTP 503 (ระบบไม่พร้อม) · openapi-motor-service · 13:43
+  GET /api/v1/motor/premium · 6 ครั้งใน 8 นาที · ใช้เวลา 106 ms
+  ERROR [GetMotorPremiumInternal] Error: invalid character '<' looking for beginning of value
+  service ตอบกลับว่า API, System Fail Error
+  ```
+- **ระดับความสำคัญ:** **P1 - High (Partner API Disruption / Lead Generation Blocked)**
+- **ระบบที่เกี่ยวข้อง:** `openapi-motor-service` ([go-e-api](file:///Users/kritsanawathaniyanon/Code/Go/go-e-api)), Cloudflare WAF, External Ingress
+- **ช่วงเวลาและผลกระทบ:**
+  - เวลาที่เกิดเหตุ: **13:43 น. (17 ก.ย. 2026)**
+  - ความถี่: เกิด 6 ครั้งในรอบ 8 นาที ตอบกลับรวดเร็วมาก (106 ms)
+  - ผลกระทบต่อผู้ใช้: พันธมิตรภายนอก (Brokers/Partners) ที่เรียกขอเบี้ยประกันรถยนต์และสร้าง Lead ผ่าน OpenAPI ไม่สามารถคำนวณราคาได้ โดยได้รับ HTTP 503 "API, System Fail Error"
+
+#### 🔍 รายละเอียดของปัญหาและการวิเคราะห์หาสาเหตุ (RCA & Problem Details)
+
+1. **ที่มาของ Error `invalid character '<' looking for beginning of value`:**
+   - ในภาษา Go ข้อความ Error นี้มาจากฟังก์ชัน `json.Unmarshal()` เมื่อ Payload ที่ส่งเข้ามาเริ่มต้นด้วยตัวอักษร `<` ซึ่งเป็นโครงสร้างของ **HTML Page (`<!DOCTYPE html>` หรือ `<html>`)** ไม่ใช่ JSON Object ที่ขึ้นต้นด้วย `{` หรือ `[`
+2. **ทำไมถึงได้รับหน้าเว็บ HTML ภายในเวลา 106 ms? (Hairpin NAT Loop):**
+   - เมื่อตรวจสอบไฟล์คอนฟิก [helm-prod.yaml](file:///Users/kritsanawathaniyanon/Code/Go/go-e-api/helm/helm-prod.yaml#L52-L53) ของ `go-e-api` พบว่า:
+     ```yaml
+     - name: ISV_HOST
+       value: "https://api.insurverse.co.th"
+     ```
+   - Service ภายในคลัสเตอร์ Kubernetes ไม่ได้ยิงหา Service ปลายทางผ่าน Internal DNS แต่ยิงวนลูปออกไปยังโดเมนสาธารณะ **`https://api.insurverse.co.th` (Hairpin Loop)**
+   - คำขอจึงต้องวิ่งผ่าน **Cloudflare WAF / GCP External Load Balancer** ซึ่งเกิดการตรวจจับหรือมี Rate Limit / Security Rule ทำให้ Cloudflare หรือ Ingress บล็อกคำขอและส่งหน้าเว็บ Error HTML กลับมาอย่างรวดเร็ว (106 ms)
+3. **ข้อบกพร่องในโค้ด [repository.go:50-59](file:///Users/kritsanawathaniyanon/Code/Go/go-e-api/internal/motor/repository/repository.go#L50-L59):**
+   - โค้ดนำผลลัพธ์จาก `s.fetchPost()` ไปสั่ง `json.Unmarshal([]byte(apiResult), &r)` โดยตรง **โดยไม่ได้ตรวจสอบว่า `httpCode >= 400` หรือไม่ และไม่ได้เช็คว่า Content-Type เป็น `application/json` หรือไม่** ทำให้เกิด Error แตกกระจายและตอบกลับ HTTP 503 สู่พาร์ตเนอร์
+
+#### 🛠️ การแก้ไขปัญหาและการป้องกันระยะยาว (Resolution & Hardening)
+
+1. **ปรับปรุง Helm Config เปลี่ยนจาก Hairpin เป็น Internal DNS (Primary Fix):**
+   - ปรับ `ISV_HOST` ใน `helm-prod.yaml` ให้ชี้ Kubernetes Service ภายในคลัสเตอร์โดยตรง (เช่น `http://backend-core-service:8080` หรือ `http://backend-premium-service:3001`) เพื่อไม่ให้ทราฟฟิกวิ่งออกเน็ตนอกและไม่ติด Cloudflare WAF
+2. **ปรับปรุง Defensive Coding ใน `repository.go`:**
+   ```diff
+    apiResult, httpCode, err := s.fetchPost(s.cfg.ISV.Endpoint.Premium, string(jsonData))
+    if err != nil {
+        slog.Error(fmt.Sprintf("[%s] Request Error: %s", s.cfg.ISV.Endpoint.Premium, err.Error()))
+        return
+    }
+   +if httpCode >= 400 {
+   +    slog.Error(fmt.Sprintf("[%s] Downstream returned HTTP %d: %s", s.cfg.ISV.Endpoint.Premium, httpCode, apiResult))
+   +    return r, fmt.Errorf("downstream service returned status %d", httpCode)
+   +}
+    err = json.Unmarshal([]byte(apiResult), &r)
    ```
