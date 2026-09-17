@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iia-proxy-uat-config
+  namespace: insurverse
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    http {
+        access_log off;
+        server {
+            listen 8080;
+            server_name _;
+
+            location /healthz {
+                return 200 'OK';
+                add_header Content-Type text/plain;
+            }
+
+            location / {
+                proxy_pass https://thumb--d.insurverse.co.th;
+                proxy_ssl_server_name on;
+                proxy_ssl_protocols TLSv1.2 TLSv1.3;
+                proxy_set_header Host thumb--d.insurverse.co.th;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_connect_timeout 10s;
+                proxy_read_timeout 60s;
+                proxy_send_timeout 60s;
+                proxy_buffering off;
+            }
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iia-proxy-uat
+  namespace: insurverse
+  labels:
+    app: iia-proxy-uat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iia-proxy-uat
+  template:
+    metadata:
+      labels:
+        app: iia-proxy-uat
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 20m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: config
+        configMap:
+          name: iia-proxy-uat-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iia-proxy-uat-service
+  namespace: insurverse
+  annotations:
+    cloud.google.com/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: iia-proxy-uat

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: iia-proxy-uat-service
+  namespace: insurverse
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: iia-proxy-uat-service
+  namespace: insurverse
+subsets:
+- addresses:
+  - ip: 10.92.0.32
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
