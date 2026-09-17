@@ -1,0 +1,94 @@
+-- =============================================================================
+-- Function: insurverse.fn_policy_quatationno_in_debt_iia
+-- OID: 18688
+-- Identity Arguments: ()
+-- Returns: text
+-- Language: plpgsql
+-- Categorization: 04_utilities_and_formatters
+-- Extracted: 2026-09-17 15:03:07
+-- Source DB: UAT-ISV (136.85.102.224:5432 / insurverse)
+-- Governance: AGENTS.md Rule 3 Mandatory DB Function Backup
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION insurverse.fn_policy_quatationno_in_debt_iia()
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+	DECLARE
+	SYS_QUATATION_NO TEXT;
+  PH_QUATATION_LAST INT;
+	CA_QUATATION_LAST INT;
+	SYS_QUATATION_LAST INT;
+	SYS_QUATATION_MOD INT;
+BEGIN
+  SYS_QUATATION_NO = '003-00-' || TO_CHAR(now()+ INTERVAL '7 HOUR', 'yy') || '-';
+	/*
+	EXECUTE
+	'SELECT COALESCE(CAST(SUBSTR("Policy_Quatation_No",11,7) AS INT),0)
+	FROM insurverse."Policy_Header"
+	WHERE "Policy_Quatation_No" LIKE ''' || SYS_QUATATION_NO || '%''' ||
+	'ORDER BY "Policy_Quatation_No" DESC
+	LIMIT 1'
+	INTO PH_QUATATION_LAST;
+	
+	IF PH_QUATATION_LAST IS NULL THEN
+	 PH_QUATATION_LAST = 0;
+	END IF;
+	
+	EXECUTE
+	'SELECT COALESCE(CAST(SUBSTR("Policy_Quatation_No",11,7) AS INT),0)
+	FROM insurverse."Policy_Car_Act_Discount_Premium"
+	WHERE "Policy_Quatation_No" LIKE ''' || SYS_QUATATION_NO || '%''' ||
+	'ORDER BY "Policy_Quatation_No" DESC
+	LIMIT 1'
+	INTO CA_QUATATION_LAST;
+	
+	IF CA_QUATATION_LAST IS NULL THEN
+	 CA_QUATATION_LAST = 0;
+	END IF;
+	
+	IF PH_QUATATION_LAST >= CA_QUATATION_LAST THEN
+		SYS_QUATATION_LAST = PH_QUATATION_LAST;
+	ELSE
+		SYS_QUATATION_LAST = CA_QUATATION_LAST;
+	END IF;
+	*/
+	EXECUTE
+	'SELECT "qua_no"
+FROM (
+SELECT "qua_no"
+FROM (SELECT COALESCE(CAST(SUBSTR("Policy_Quatation_No",11,7) AS INT),0) as "qua_no"
+	FROM insurverse."Policy_Header"
+	WHERE "Policy_Quatation_No" LIKE ''' || SYS_QUATATION_NO || '%''' ||
+	'	ORDER BY "Policy_Quatation_No" DESC
+	LIMIT 1) as "qua"
+UNION
+SELECT "qua_no"
+FROM (SELECT COALESCE(CAST(SUBSTR("Policy_Quatation_No",11,7) AS INT),0) as "qua_no"
+	FROM insurverse."Policy_Car_Act_Discount_Premium"
+	WHERE "Policy_Quatation_No" LIKE ''' || SYS_QUATATION_NO || '%''' ||
+	'	ORDER BY "Policy_Quatation_No" DESC
+	LIMIT 1) as "qua"
+UNION
+SELECT "qua_no"
+FROM (SELECT COALESCE(CAST(SUBSTR("Policy_Quatation_No",11,7) AS INT),0) as "qua_no"
+	FROM insurverse."Policy_endorse_detail"
+	WHERE "Policy_Quatation_No" LIKE ''' || SYS_QUATATION_NO || '%''' ||
+	'	ORDER BY "Policy_Quatation_No" DESC
+	LIMIT 1) as "qua"
+) as "h_qua"
+ORDER BY "qua_no" DESC
+LIMIT 1
+'
+	INTO SYS_QUATATION_LAST;
+	
+	IF SYS_QUATATION_LAST IS NULL THEN
+	 SYS_QUATATION_LAST = 0;
+	END IF;
+	
+	SYS_QUATATION_MOD = MOD(SYS_QUATATION_LAST+1,8);
+	SYS_QUATATION_NO = SYS_QUATATION_NO || regexp_replace(TO_CHAR(SYS_QUATATION_LAST+1,'0000000'), '[^\w]+','') || SYS_QUATATION_MOD;
+	
+	RETURN SYS_QUATATION_NO;
+END
+$function$

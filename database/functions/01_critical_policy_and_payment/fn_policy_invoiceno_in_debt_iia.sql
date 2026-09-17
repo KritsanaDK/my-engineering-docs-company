@@ -1,0 +1,67 @@
+-- =============================================================================
+-- Function: insurverse.fn_policy_invoiceno_in_debt_iia
+-- OID: 18626
+-- Identity Arguments: ()
+-- Returns: text
+-- Language: plpgsql
+-- Categorization: 01_critical_policy_and_payment
+-- Extracted: 2026-09-17 15:03:07
+-- Source DB: UAT-ISV (136.85.102.224:5432 / insurverse)
+-- Governance: AGENTS.md Rule 3 Mandatory DB Function Backup
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION insurverse.fn_policy_invoiceno_in_debt_iia()
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+	DECLARE
+	SYS_INVOICE_NO TEXT;
+  PH_INVOICE_LAST INT;
+	CA_INVOICE_LAST INT;
+	SYS_INVOICE_LAST INT;
+	SYS_BOOK_NO TEXT;
+BEGIN
+	SYS_INVOICE_NO = TO_CHAR(now()+ INTERVAL '7 HOUR', 'yymm/');
+	SYS_BOOK_NO = insurverse.fn_policy_book_in_debt_iia();
+
+	EXECUTE
+	'SELECT "inv_no"
+FROM (
+SELECT "inv_no"
+FROM (SELECT COALESCE(CAST(SUBSTR("Policy_Invoice_No",6,5) AS INT),0) as "inv_no"
+	FROM insurverse."Policy_Header"
+	WHERE "Policy_Invoice_No" LIKE ''' || SYS_INVOICE_NO || '%''' ||
+	' AND "Policy_book"=''' || SYS_BOOK_NO || '''' ||
+	' ORDER BY "Policy_Invoice_No" DESC
+	LIMIT 1) as "inv"
+UNION
+SELECT "inv_no"
+FROM (SELECT COALESCE(CAST(SUBSTR("Policy_Invoice_No",6,5) AS INT),0) as "inv_no"
+	FROM insurverse."Policy_Car_Act_Discount_Premium"
+	WHERE "Policy_Invoice_No" LIKE ''' || SYS_INVOICE_NO || '%''' ||
+	' AND "Policy_book"=''' || SYS_BOOK_NO || '''' ||
+	' ORDER BY "Policy_Invoice_No" DESC
+	LIMIT 1) as "inv"
+UNION
+SELECT "inv_no"
+FROM (SELECT COALESCE(CAST(SUBSTR("Policy_Invoice_No",6,5) AS INT),0) as "inv_no"
+	FROM insurverse."Policy_endorse_detail"
+	WHERE "Policy_Invoice_No" LIKE ''' || SYS_INVOICE_NO || '%''' ||
+	' AND "Policy_book"=''' || SYS_BOOK_NO || '''' ||
+	' ORDER BY "Policy_Invoice_No" DESC
+	LIMIT 1) as "inv"
+) as "h_inv"
+ORDER BY "inv_no" DESC
+LIMIT 1
+'
+	INTO SYS_INVOICE_LAST;
+	
+	IF SYS_INVOICE_LAST IS NULL THEN
+	 SYS_INVOICE_LAST = 0;
+	END IF;
+	
+	SYS_INVOICE_NO = SYS_INVOICE_NO || regexp_replace(TO_CHAR(SYS_INVOICE_LAST+1,'00000'), '[^\w]+','');
+	
+	RETURN SYS_INVOICE_NO;
+END
+$function$
