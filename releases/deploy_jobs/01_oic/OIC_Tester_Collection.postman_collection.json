@@ -1,0 +1,141 @@
+{
+	"info": {
+		"_postman_id": "oic-compulsory-act-tester-collection-2026",
+		"name": "OIC Compulsory Act QA/Tester Suite (UAT-ISV)",
+		"description": "Postman Collection for QA/Tester verifying OIC Compulsory Act (พ.ร.บ. คปภ.) policy issuance, pricing, and concurrency on UAT-ISV using Standard Test Citizen ID 1111111111119.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://insurverse-uat-isv-api.insurverse.co.th",
+			"type": "string"
+		},
+		{
+			"key": "test_citizen_id",
+			"value": "1111111111119",
+			"type": "string"
+		},
+		{
+			"key": "test_name",
+			"value": "นาย กฤษณะ วัฒนายนนต์",
+			"type": "string"
+		},
+		{
+			"key": "test_phone",
+			"value": "0628696603",
+			"type": "string"
+		},
+		{
+			"key": "test_email",
+			"value": "kritsana.w.os@horixon-t8.com",
+			"type": "string"
+		},
+		{
+			"key": "test_plate",
+			"value": "1กข1234",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "01 - Premium Calculation & OIC Tariff",
+			"item": [
+				{
+					"name": "TC-OIC-07 Load Act Premium (645.21 THB)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fn\": \"loadActPremium\",\n    \"data\": {\n        \"Comp_Code\": \"1.10\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/premium/actAPI",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "premium", "actAPI"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "02 - Data Compliance & Validation",
+			"item": [
+				{
+					"name": "TC-OIC-01 Validate Citizen ID TrimSpace",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"citizenId\": \" {{test_citizen_id}} \",\n    \"firstName\": \"กฤษณะ\",\n    \"lastName\": \"วัฒนายนนต์\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/uam/validate_citizen",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "uam", "validate_citizen"]
+						}
+					}
+				},
+				{
+					"name": "TC-OIC-02 Validate Plate Number Regex",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"plateNo\": \"{{test_plate}}\",\n    \"provinceId\": 10\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/policy/validate_plate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "policy", "validate_plate"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "03 - Lead Creation & Policy Issuance",
+			"item": [
+				{
+					"name": "TC-OIC-08 Create Act Lead & Convert Policy",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"citizenId\": \"{{test_citizen_id}}\",\n    \"customerName\": \"{{test_name}}\",\n    \"phone\": \"{{test_phone}}\",\n    \"email\": \"{{test_email}}\",\n    \"plateNo\": \"{{test_plate}}\",\n    \"provinceId\": 10,\n    \"compCode\": \"1.10\",\n    \"address\": \"1 หมู่ 1\",\n    \"subdistrictId\": 979,\n    \"districtId\": 124,\n    \"zipcode\": \"18110\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/purchase/act/create_lead",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "purchase", "act", "create_lead"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

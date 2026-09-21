@@ -1,0 +1,162 @@
+{
+	"info": {
+		"_postman_id": "ws6-ws9-tester-collection-2026",
+		"name": "WS6 - WS9 QA/Tester Suite (UAT-ISV)",
+		"description": "Postman Collection for QA/Tester verifying Workstreams WS6 to WS9 on UAT-ISV environment using Standard Test Citizen ID 1111111111119.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://insurverse-uat-isv-api.insurverse.co.th",
+			"type": "string"
+		},
+		{
+			"key": "test_citizen_id",
+			"value": "1111111111119",
+			"type": "string"
+		},
+		{
+			"key": "test_phone",
+			"value": "0628696603",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "WS6 - Salesforce & Endorsement",
+			"item": [
+				{
+					"name": "TC-WS6-04 Check SF Sync Contact Phone",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"citizenId\": \"{{test_citizen_id}}\",\n    \"phone\": \"{{test_phone}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/uam/salesforce/check_contact",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "uam", "salesforce", "check_contact"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "WS7 - Renewal Guardrails",
+			"item": [
+				{
+					"name": "TC-WS7-01 Check Renewal Block Over 90 Days (ER007)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"policyNo\": \"TEST-VMI-OVER90D\",\n    \"citizenId\": \"{{test_citizen_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/purchase/renewal/check",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "purchase", "renewal", "check"]
+						}
+					}
+				},
+				{
+					"name": "TC-WS7-02 Check Renewal Allowed Within 90 Days",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"policyNo\": \"TEST-VMI-WITHIN90D\",\n    \"citizenId\": \"{{test_citizen_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/purchase/renewal/check",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "purchase", "renewal", "check"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "WS8 - Backoffice & Promo",
+			"item": [
+				{
+					"name": "TC-WS8-01 Query Promo Code List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/backoffice/promos?page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "backoffice", "promos"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "WS9 - Reconcile Reports & Operations",
+			"item": [
+				{
+					"name": "TC-WS9-02 Get Daily Reconcile Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/uam/report/reconcile?date=2026-09-15",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "uam", "report", "reconcile"],
+							"query": [
+								{ "key": "date", "value": "2026-09-15" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Health Check Probe",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
