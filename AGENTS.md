@@ -42,3 +42,11 @@
      - **`my-engineering-docs`** (`~/Code/docs`)
      - **`my-keystores`** (`~/.keystores`)
   3. Verify all 3 repositories report `working tree clean` and provide updated commit summaries.
+
+## 📌 Rule 9: Mandatory Dual-Inspection: Code + DB Stored Procedures (ต้องตรวจสอบ Code และ DB Stored Procedure ควบคู่กันเสมอ)
+- **Always Verify Both Application Code & Database Stored Objects**: For every bug fix, enhancement, policy issuance workflow, payment processing, or concurrency handling, the AI agent MUST strictly cross-examine BOTH the application source code (Go/Node.js/Python) and the underlying Database Stored Procedures/Functions/Triggers (e.g. `fn_lead_to_car_act`, `fn_policy_invoiceno_iia`, `fn_policy_renewal`, etc.) in parallel to prevent desynchronization and reduce errors.
+- **Prevent Desynchronization & Logic Blind Spots**:
+  1. Never assume business logic, validation, or safeguards reside solely in application code or solely in database procedures.
+  2. Always verify parameter signatures, data type mappings (e.g. nullable columns to pointer types `*string`), advisory locks, transaction isolation, and return contracts between the application caller and the DB callee before implementing changes.
+  3. Ensure that any modification to application code preserves constraints expected by DB functions, and any modification to DB functions maintains full compatibility with all calling services.
+
