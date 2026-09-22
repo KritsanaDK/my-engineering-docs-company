@@ -50,3 +50,8 @@
   2. Always verify parameter signatures, data type mappings (e.g. nullable columns to pointer types `*string`), advisory locks, transaction isolation, and return contracts between the application caller and the DB callee before implementing changes.
   3. Ensure that any modification to application code preserves constraints expected by DB functions, and any modification to DB functions maintains full compatibility with all calling services.
 
+## 📌 Rule 10: Mandatory Local-Only Git Operations & No Tracking from Main (ห้าม Git Push และต้องใช้ --no-track เสมอ)
+- **Never Auto-Push to Remote (ห้ามรัน git push บน Codebase ทุกกรณี)**: The AI agent MUST NEVER execute `git push` to any project codebase or microservice repository (GitLab / GitHub) under any circumstances, unless explicitly and directly commanded by the user with the word "push". All development, bug fixing, branch creation, testing, and commits MUST remain 100% strictly on the local machine to prevent CI/CD pipelines, automated webhooks, or auto-merging from firing prematurely into `main`.
+- **Mandatory `--no-track` When Branching (ต้องใส่ --no-track เสมอเมื่อแตก Branch จาก main)**: Whenever creating a new branch from `main` or any remote branch, the AI agent MUST strictly use the `--no-track` flag (e.g. `git checkout --no-track -b <branch_name> origin/main`). The AI agent MUST NEVER allow Git to automatically attach upstream tracking (`branch.<name>.merge = refs/heads/main`), preventing accidental pushes or auto-merge routing into production `main`.
+- **Verify Clean Local Branch (ตรวจสอบสถานะ Branch บริสุทธิ์เสมอ)**: After creating a branch, always verify with `git branch -vv` that the newly created branch has NO upstream tracking bracket (`[origin/...]`) pointing to `main`.
+
