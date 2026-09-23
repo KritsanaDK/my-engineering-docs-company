@@ -529,7 +529,7 @@
 | Sequence บน UAT-ISV | **ไม่มี `seq_motor_lead_no`** — คอลัมน์ `Lead_No` ใช้ `DEFAULT nextval('insurverse.seq_lead_no')` (last_value = MAX(Lead_No) = 92369 ตรงกัน) |
 | โค้ด `d20771f` | ใช้ `nextval(pg_get_serial_sequence('insurverse."Lead_coverage_premium"','Lead_No'))` ซึ่งบน UAT-ISV คืน **NULL** เพราะ `seq_lead_no` ไม่ได้ `OWNED BY` คอลัมน์ → ถ้า Deploy `d20771f` บน DB สภาพนี้ **Insert Motor Lead จะพังทุกครั้ง** |
 
-**📦 Prod Pack พร้อมแล้ว:** `deploy_jobs/04_motor_lead_seq/` (Promote `d031a3f` + DDL `seq_lead_no` ที่ทดสอบแล้ว + Rollback) และแพตช์ปิดตัวออกเลขตัวที่ 2 ใน `renewal-reprice.service.js` (`0765792` บน `fix/fx-01-premium-reprice`) — **ใช้ Pack นี้แทน DDL ด้านล่าง**
+**📦 Prod Pack พร้อมแล้ว:** `deploy_jobs/04_motor_lead_seq/` (Promote `d031a3f` + DDL `seq_lead_no` ที่ทดสอบแล้ว + Rollback) และแพตช์ปิดตัวออกเลขตัวที่ 2 ใน `renewal-reprice.service.js` (ไฟล์แพตช์ใน `deploy_jobs/04_motor_lead_seq/patches/` ส่งให้เจ้าของ Feature นำไปใช้ — ไม่ทำ branch เองเพราะไฟล์ยังไม่มีบน `main`) — **ใช้ Pack นี้แทน DDL ด้านล่าง**
 
 **สรุป:** DDL ด้านล่าง (สร้าง `seq_motor_lead_no`) **ไม่ตรงกับทั้งโค้ดและ DB ที่ทดสอบบน UAT-ISV** ห้ามรันบน Prod ตามนี้ ต้องเลือกก่อนว่าจะ Promote branch ไหน แล้วเตรียม DDL ให้ตรง:
 - ถ้าใช้ `d031a3f` (ตัวที่อยู่บน UAT-ISV): Prod ต้องมี `seq_lead_no` + `ALTER COLUMN "Lead_No" SET DEFAULT nextval('insurverse.seq_lead_no')` + `setval` จาก `MAX("Lead_No")`
