@@ -56,12 +56,15 @@
 | **13** | ✅ ผ่าน | ยิง `saveLeadCoveragePremium` พร้อมกัน 50 request → สำเร็จ 50/50, Lead_No ไม่ซ้ำ (92371–92420), `seq_lead_no` = `MAX`; Probe ส่ง `Lead_No` + ชื่อ field แปลก → ถูกตัดทิ้ง |
 | **15** | ✅ ผ่าน | `POST /api/v1/isv-test/short_link` → 200 + `short_url`; ลิงก์ redirect 307 ถูกต้อง |
 | **23** | ✅ ผ่าน | `POST /api/v1/uam/ocr_passport_reader_service` → 200 + `can_manual: true` (Downstream NXDOMAIN จริง) |
-| **25** | 🟡 บางส่วน | `OPTIONS /api/v1/analytics/analytics` 20/20 → 204 + CORS headers ถูกต้อง แต่ Helm ต้นเหตุ (delay/preStop) ยังไม่อยู่ใน `helm-uat-isv.yaml` |
+| **24** | ✅ ผ่าน | Graceful shutdown (`bc47a8e` → uat-isv `9a5848b`) + Helm (`c2e4985`: Mem 128Mi/256Mi, CPU 200m, probe 15s/threshold 5) — ยิง `POST /services/oauth/v2/token` ทุก ~1 วินาทีตลอด Rollout: รอบ 1 (pod เก่ายังเป็นโค้ดเดิม) 1,530 → 422 + `000` 2 ครั้ง, ไม่มี 503 / **รอบ 2 (12:55–13:10) 1,784/1,784 → 422, ไม่มี 503 / `000`** |
+| **25** | ✅ ผ่าน | Graceful shutdown (`d28bb6c` → uat-isv `a89589c`) + Helm (`9d5fd8c`: probe 15s/threshold 5) — ยิง `OPTIONS /api/v1/analytics/analytics` ตลอด Rollout: รอบ 1 1,532/1,532 → 204 / **รอบ 2 1,784/1,784 → 204, ไม่มี 503** |
 | **16** | ✅ ผ่าน | ก่อนแก้: `validate_email` → 500 `Send Email Failed` (ต้นเหตุ #22) — หลัง `3d2983b`: `validate_email` → 200 + OTP row, `forget_password` (type=web) → 200 |
 | **22** | ✅ ผ่าน | ก่อนแก้: `POST /api/v1/notification/email` → 400 `Unsuccess` (image `debian11`) — หลัง Deploy `3d2983b` (Debian 12): → 200 `Success` |
 | 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 18, 21, 26 | ⏳ ยังไม่ทดสอบ | ต้องผ่านขั้นชำระเงิน 2C2P sandbox (รอเลือกวิธี) — ข้อ 6, 10, 12, 21 ตรวจโค้ดบน uat-isv แล้ว |
-| 17, 24, 27 | ⏳ ยังไม่ทดสอบ | ต้องมีกรมธรรม์ / partner client และตรวจค่าบน cluster (`gcloud auth login`) |
+| 17, 27 | ⏳ ยังไม่ทดสอบ | ต้องมีกรมธรรม์ / partner client และตรวจค่าบน cluster (`gcloud auth login`) |
 | 2, 19, 20 | ⏭️ ทดสอบ E2E ไม่ได้ | #2 Manual บน Salesforce, #19 Salesforce เป็นผู้เรียก, #20 เป็น SOP |
+
+> ⚠️ **#24/#25 ข้อจำกัด:** ไม่มีสิทธิ์ `kubectl` (ยังไม่ `gcloud auth login`) จึงยืนยันเวลาที่ pod ถูกแทนที่จริงจาก cluster ไม่ได้ อ้างอิงจากเวลา push + ระยะ pipeline ~5 นาที — Chart ไม่รองรับ `lifecycle` จึงใช้ sleep ในโค้ดแทน preStop (image distroless ไม่มี `/bin/sh`) — CI ใช้ `helm upgrade --force` ไม่มี `--reuse-values` ค่าต้องอยู่ใน `helm-*.yaml` เท่านั้น
 
 > 🔐 **Security finding ระหว่างทดสอบ (ยังไม่แก้):** `go-echo-uam-service` `ForgetPassword` (`userController.go` ~บรรทัด 2255) ต่อสตริง `"email = '" + Email + "'"` เข้า SQL ตรงๆ บน Endpoint สาธารณะ `/api/v1/uam/forget_password` → **SQL Injection** ต้องเปลี่ยนเป็น Parameterized Query (`$1`)
 
