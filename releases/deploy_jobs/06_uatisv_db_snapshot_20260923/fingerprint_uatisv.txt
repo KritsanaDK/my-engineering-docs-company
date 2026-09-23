@@ -1,0 +1,12 @@
+fn_format_utc_timestamp_th(p_timestamp timestamp without time zone)|character varying|e994e9b5e5f29d9f5a27d89d19f0b7b7|227
+fn_lead_to_car_act(lead_no bigint)|TABLE(car_act_no text, rtn_lead_no bigint)|40184b44dbf420159f38f1798eaa7830|9010
+fn_lead_to_car_act(lead_no integer)|TABLE(car_act_no text, rtn_lead_no integer)|609f4d6334eb4e948824ffdc6d682935|135
+fn_policy_barcode()|text|f261ab207353c6ca0f3138d699740813|1707
+fn_policy_book_iia()|text|44413dd73de04814770e7e05f202727e|99
+fn_policy_invoiceno_iia()|text|55132eabe26a6d5332da194f5eaa25c9|2281
+fn_policy_lotno_iia()|text|6c0680faa29294ee2354572da0ed9ac1|1020
+fn_policy_quatationno_iia()|text|e329a89dce1002914a1464c275fdd70a|3086
+fn_policy_renewal(in_policy_no text, in_flag_noti boolean, in_flag_lead boolean, in_bad_behavior boolean)|TABLE(rtn_success boolean, rtn_ncb_tier integer, rtn_error_code text, rtn_msg text, rtn_policy_no text, rtn_prem_amt numeric, rtn_duty_amt numeric, rtn_vat_amt numeric, rtn_total_amt numeric, rtn_is_compulsory boolean, rtn_together_policy text, rtn_lead_no integer, rtn_log_noti_id integer, rtn_json_body text, rtn_prem_act numeric)|1a87c166fe05bc49892cb57d8fdc8a87|107107
+fn_policy_renewal_noti()|TABLE(rtn_success boolean, rtn_error_code text, rtn_msg text, rtn_log_noti_id integer, rtn_noti_code text, rtn_expire_count integer, rtn_mv_type text, rtn_mv_no text, rtn_mc_no text, rtn_owner_title text, rtn_owner_firstname text, rtn_owner_lastname text, rtn_mv_enddate timestamp without time zone, rtn_mc_enddate timestamp without time zone, rtn_car_license_no text, rtn_car_license_province text, rtn_email text, rtn_phone text)|fbabe64accca18bed24b664b18f6e3bb|34955
+fn_policy_renewal_noti_log()|TABLE(rtn_success boolean, rtn_error_code text, rtn_msg text, rtn_log_noti_id integer, rtn_noti_code text, rtn_expire_count integer, rtn_mv_type text, rtn_mv_no text, rtn_mc_no text, rtn_owner_title text, rtn_owner_firstname text, rtn_owner_lastname text, rtn_mv_enddate timestamp without time zone, rtn_mc_enddate timestamp without time zone, rtn_car_license_no text, rtn_car_license_province text, rtn_email text, rtn_phone text)|c66eb1a07ecd209f831f90f268798c98|9242
+fn_policy_to_car_act(policy_no text)|TABLE(car_act_no text, rtn_policy_no text)|657dc56f11ffd2056bb21a07797cd139|15154

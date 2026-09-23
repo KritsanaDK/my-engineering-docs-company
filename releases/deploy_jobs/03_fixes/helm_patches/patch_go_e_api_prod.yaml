@@ -1,8 +1,19 @@
 # Helm Values Patch: go-e-api (OpenAPI Motor) (Production)
 # ปัญหาที่แก้ไข: Issue #27 - OpenAPI Motor Premium 503 (HTML Parse Error via Hairpin Loop)
-# คำสั่งใช้งาน: helm upgrade openapi-motor-service ./helm --reuse-values -f patch_go_e_api_prod.yaml -n default
-# หมายเหตุ: ห้ามแก้ไข helm-prod.yaml ใน repo โดยตรง
-
-extraEnv:
-  - name: ISV_HOST
-    value: "http://backend-core-service:8080"
+#
+# ⛔ ยกเลิก — ห้ามใช้ไฟล์นี้ (ตรวจ 2026-09-23)
+# ⛔ WITHDRAWN — do not apply (checked 2026-09-23)
+#
+# ฉบับเดิมตั้ง ISV_HOST = http://backend-core-service:8080 แต่ ISV_HOST เป็น Host ร่วมของ
+# ISV_ENDPOINT_* ทุกตัว (core, uam, purchase, premium, consent) ถ้าชี้ไป core อย่างเดียว
+# OpenAPI ขอเบี้ย (/api/v1/premium/premiumAPI), ชำระเงิน (/api/v1/purchase/*) และสมัครสมาชิก (/api/v1/uam/*) จะได้ 404 ทั้งหมด
+# The previous version pointed ISV_HOST at backend-core-service only, but ISV_HOST is the
+# shared base URL of every ISV_ENDPOINT_* (core, uam, purchase, premium, consent). Premium,
+# payment and registration calls would all return 404.
+#
+# นอกจากนี้ CI ใช้ `helm upgrade --force` โดยไม่มี --reuse-values ค่า Patch ที่ใส่มือจะหายตอน Deploy ครั้งถัดไป
+# CI also runs `helm upgrade --force` without --reuse-values, so a manual patch is lost on the next deploy.
+#
+# ทางแก้ที่ใช้แทน / Replacement:
+#   - Code: fix/fx-01-e-api 374cbca — fetchGet/fetchPost คืน HTTP status + snippet เมื่อได้ non-JSON (ไม่ใช่ '<' อีก)
+#   - Internal DNS: ต้องแยก Host ตาม Service ในโค้ด (เช่น ISV_HOST_PREMIUM) — รอตัดสินใจ / needs per-service hosts, pending decision

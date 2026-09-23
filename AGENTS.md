@@ -42,6 +42,7 @@
      - **`my-engineering-docs`** (`~/Code/docs`)
      - **`my-keystores`** (`~/.keystores`)
   3. Verify all 3 repositories report `working tree clean` and provide updated commit summaries.
+  4. Run `~/.gemini/config/scripts/sync_ai_config.sh` so every AI tool (Antigravity/Gemini, Claude Code, Codex, Cursor) points at the same AGENTS.md and the same skills (on a new machine: after cloning `my-antigravity-skills`).
 
 ## 📌 Rule 9: Mandatory Dual-Inspection: Code + DB Stored Procedures (ต้องตรวจสอบ Code และ DB Stored Procedure ควบคู่กันเสมอ)
 - **Always Verify Both Application Code & Database Stored Objects**: For every bug fix, enhancement, policy issuance workflow, payment processing, or concurrency handling, the AI agent MUST strictly cross-examine BOTH the application source code (Go/Node.js/Python) and the underlying Database Stored Procedures/Functions/Triggers (e.g. `fn_lead_to_car_act`, `fn_policy_invoiceno_iia`, `fn_policy_renewal`, etc.) in parallel to prevent desynchronization and reduce errors.
@@ -63,3 +64,11 @@
 - **Mandatory `--no-track` When Branching (ต้องใส่ --no-track เสมอเมื่อแตก Branch จาก main)**: Whenever creating a new branch from `origin/main`, the AI agent MUST strictly use the `--no-track` flag (e.g. `git checkout --no-track -b <branch_name> origin/main`). The AI agent MUST NEVER allow Git to automatically attach upstream tracking (`branch.<name>.merge = refs/heads/main`), preventing accidental pushes or auto-merge routing into production `main`.
 - **Verify Clean Local Branch (ตรวจสอบสถานะ Branch บริสุทธิ์เสมอ)**: After creating a branch, always verify with `git branch -vv` that the newly created branch has NO upstream tracking bracket (`[origin/...]`) pointing to `main`.
 
+
+## 📌 Rule 11: Mandatory Spec Sync After Code Changes (แก้ Code ต้องอัปเดต Spec เสมอ)
+- **Always Update Specs With the Change**: Whenever the AI agent modifies routes, handlers, request/response DTOs, validation, middleware/auth, SQL, tables/columns used, or stored functions in any service under `~/Code/Go` or app under `~/Code/NextJs`, it MUST update the matching docs in `~/Code/docs` in the same piece of work, following the `api-spec-sync` skill:
+  - `architecture/api_specs/<service>.md` and the index `architecture/api_specs/README.md` (services table, Service × DB matrix, security table)
+  - `architecture/nextjs_specs/<app>.md` when a frontend-facing contract changes
+  - `database/schema_spec/functions_and_triggers.md` when a stored function changes (after the Rule 3 backup)
+- **Mention It in the MR**: State in the MR description which spec files were updated. For a pure refactor with no contract change, say explicitly that no spec update is needed.
+- **Never Write Secrets Into Docs**: Record environment variable NAMES only, never secret values.

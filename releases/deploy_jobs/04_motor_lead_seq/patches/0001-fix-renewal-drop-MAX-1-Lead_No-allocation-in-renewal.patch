@@ -1,0 +1,43 @@
+From 07657923c234d5d81a830ee9c4b69d317c3e08fc Mon Sep 17 00:00:00 2001
+From: "kritsana.w.os" <kritsana.w.os@horixon-t8.com>
+Date: Wed, 23 Sep 2026 11:57:31 +0700
+Subject: [PATCH] fix(renewal): drop MAX()+1 Lead_No allocation in renewal
+ reprice upsertLead (FX-01 #13)
+
+upsertLead inserted Lead_coverage_premium with MAX("Lead_No")+1, a second
+allocator next to the seq_lead_no column DEFAULT used by the quote path
+(d031a3f). It races concurrent inserts and pushes MAX past the sequence, so
+the next nextval hits an occupied key (23505). Let the DEFAULT allocate and
+keep RETURNING "Lead_No".
+
+Requires Job 04 (seq_lead_no DEFAULT on Lead_No) deployed first.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+---
+ services/renewal-reprice.service.js | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/services/renewal-reprice.service.js b/services/renewal-reprice.service.js
+index ddb3959..ad86ee1 100644
+--- a/services/renewal-reprice.service.js
++++ b/services/renewal-reprice.service.js
+@@ -819,10 +819,13 @@ class RenewalRepriceService {
+       const insF = LEAD_COLUMNS.map((c) => `"${c}"`).join(", ");
+       const insD = LEAD_COLUMNS.map((c) => `:${c}`).join(", ");
+ 
++      // "Lead_No" comes from the column DEFAULT (insurverse.seq_lead_no), the same
++      // allocator the quote path uses. A MAX()+1 here would be a second allocator:
++      // it races other inserts and pushes MAX past the sequence, so the next
++      // nextval lands on an occupied key (23505).
+       const sql = `
+-        INSERT INTO insurverse."Lead_coverage_premium" ("Lead_No", ${insF})
+-        SELECT CASE WHEN MAX("Lead_No") > 0 THEN MAX("Lead_No") + 1 ELSE 1 END, ${insD}
+-        FROM insurverse."Lead_coverage_premium"
++        INSERT INTO insurverse."Lead_coverage_premium" (${insF})
++        VALUES (${insD})
+         RETURNING "Lead_No"
+       `;
+ 
+-- 
+2.54.0
+
