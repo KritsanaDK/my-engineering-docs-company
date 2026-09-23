@@ -35,7 +35,7 @@
 | **14** | **P1** | **CMI ปฏิเสธทะเบียนผิดมาตรฐาน ขบ.** _(CMI Invalid Plate 2BUS0216)_ | `uam-service` / `policy-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | WS3 กรองทะเบียน/จังหวัดแล้ว + OIC Sanitization ใน `hotfix/oic-uat` |
 | **15** | **P1** | **URL Shortener โดน Cloudflare บล็อก** _(Short Link WAF Block)_ | `isv-test` | ✅ แก้แล้ว | ✅ E2E ผ่าน | ⏳ รอขึ้น | Commit `92688d2` บน `fix/fx-01-isv-test` (merge `4d21426`) — E2E 2026-09-23: ได้ `short_url` และ redirect 307 ไป URL ถูกต้อง (ใส่ User-Agent + ตัด `//` ครบ 3 จุดเรียก) |
 | **16** | **P0** | **UAM Email & OTP ล่มทั้งระบบ** _(UAM Hairpin Loop Failure)_ | `uam-service` | ✅ แก้แล้ว | ✅ E2E ผ่าน | ⏳ รอขึ้น | UAM ชี้ Internal DNS (`3c0d2ed`) + notification Debian 12 (`3d2983b`) — E2E 2026-09-23 12:31: `validate_email` → 200 + OTP row ใน `temp_otp`, `forget_password` (type=web) → 200; Prod ใช้ `patch_uam_prod.yaml` (revert `helm-prod.yaml` ใน `65fdb48`) + ต้องมี #22 บน Prod ด้วย |
-| **17** | **P1** | **Backoffice ส่ง Policy Email ล้มเหลว** _(Large PDF Resend Gateway Fail)_ | `lead-policy-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_lead_policy_prod.yaml` แล้ว |
+| **17** | **P1** | **Backoffice ส่ง Policy Email ล้มเหลว** _(Large PDF Resend Gateway Fail)_ | `lead-policy-service` | 🟡 แก้แล้วบน uat-isv | 🟡 แก้แล้ว รอทดสอบ Backoffice | ⏳ รอขึ้น | โค้ด `fix/fx-01-lead-policy` `e7a7fbf` + uat-isv Helm `EMAIL_URL` → `http://backend-notification-service:8080/...` (`383013e`); Prod ต้องแก้ใน `helm-prod.yaml` (Patch มือจะถูก CI เขียนทับ) |
 | **18** | **P0** | **ลูกค้าชำระเงินต่ออายุไม่ได้** _(Missing ref_policy_no on Renewal)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | Guard ป้องกันข้อมูลหลุดถาวรอยู่ใน WS7 บน uat-isv (`fn_policy_renewal`) รอขึ้น Prod |
 | **19** | **P1** | **Salesforce API โดน GCP LB ตัด 30s** _(SF Endorsement Waterfall Timeout)_ | `saleforce-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | งานปรับลด Waterfall อยู่ใน WS6 บน uat-isv รอขึ้น Prod |
 | **20** | **P2** | **Cloud SQL CPU Spike 17:00 SOP** _(EOD Batch vs Deploy Diagnostic)_ | Cloud SQL (`insureverse-prod`) | ℹ️ มี SOP | ℹ️ ใช้งานอยู่ | ℹ️ ใช้งานอยู่ | CPU พุ่ง 28.4% จาก Daily EOD Batch SOP ให้เช็ค Query Insights ก่อนสรุปว่าเกิดจาก Deploy |
@@ -45,7 +45,7 @@
 | **24** | **P2** | **GCP LB 503 ((no backend)) บน Partner Token** _(OAuth2 NEG Drop)_ | `openapi-oauth-service` | 🟡 มี Patch แล้ว | 🟡 ยืนยันไม่ได้ | ⏳ รอขึ้น | Patch Prod พร้อม (`patch_oauth2_prod.yaml` 256Mi/15s) — ⚠️ ตรวจ 2026-09-23: `helm-uat-isv.yaml` ใน git ยัง 128Mi / delay 60s (ขัดกับที่เคยบันทึกว่าแก้บน uat-isv แล้ว) ต้องตรวจค่าจริงบน cluster |
 | **25** | **P2** | **CORS OPTIONS 503 ((no backend)) บน Analytics** _(Analytics Preflight Drop)_ | `backend-analytics-service` | 🟡 มี Patch แล้ว | 🟡 ผ่านบางส่วน | ⏳ รอขึ้น | E2E 2026-09-23: OPTIONS preflight 20/20 ได้ 204 — ⚠️ `helm-uat-isv.yaml` ใน git ยัง delay 60s ไม่มี `preStop` (ขัดกับที่เคยบันทึก) ต้องตรวจค่าจริงบน cluster; Patch Prod พร้อม |
 | **26** | **P0** | **2C2P Callback 502 Pod ปิดสายหนี (3.1s)** _(2C2P Callback TCP Drop)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | ขจัด Go Panic ตัดวงจร 502 TCP Drop ตอบกลับ 200 OK สมบูรณ์ (แก้คู่กับ #21) |
-| **27** | **P1** | **OpenAPI Motor เบี้ยพัง ได้รับ HTML `<` (503)** _(OpenAPI Hairpin HTML Parse Fail)_ | `openapi-motor-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_go_e_api_prod.yaml` ชี้ Internal DNS แล้ว |
+| **27** | **P1** | **OpenAPI Motor เบี้ยพัง ได้รับ HTML `<` (503)** _(OpenAPI Hairpin HTML Parse Fail)_ | `openapi-motor-service` | 🟡 แก้โค้ดแล้ว | ✅ ผ่าน E2E | ⏳ รอขึ้น | โค้ด `fix/fx-01-e-api` `374cbca` (เช็ค non-JSON ก่อน Unmarshal) — ⛔ `patch_go_e_api_prod.yaml` ถูกยกเลิก (ชี้ core อย่างเดียวจะทำ premium/purchase/uam พัง) Internal DNS ต้องแยก Host ตาม Service รอตัดสินใจ |
 
 ### 🧪 ผล E2E บน UAT-ISV (2026-09-23)
 
@@ -61,7 +61,8 @@
 | **16** | ✅ ผ่าน | ก่อนแก้: `validate_email` → 500 `Send Email Failed` (ต้นเหตุ #22) — หลัง `3d2983b`: `validate_email` → 200 + OTP row, `forget_password` (type=web) → 200 |
 | **22** | ✅ ผ่าน | ก่อนแก้: `POST /api/v1/notification/email` → 400 `Unsuccess` (image `debian11`) — หลัง Deploy `3d2983b` (Debian 12): → 200 `Success` |
 | 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 18, 21, 26 | ⏳ ยังไม่ทดสอบ | ต้องผ่านขั้นชำระเงิน 2C2P sandbox (รอเลือกวิธี) — ข้อ 6, 10, 12, 21 ตรวจโค้ดบน uat-isv แล้ว |
-| 17, 27 | ⏳ ยังไม่ทดสอบ | ต้องมีกรมธรรม์ / partner client และตรวจค่าบน cluster (`gcloud auth login`) |
+| **27** | ✅ ผ่าน | Partner `hbdisv` → `POST /services/oauth/v2/token` ได้ token → `GET /api/v1/motor/car-and-model` 200 → `GET /api/v1/motor/premium` (Toyota Yaris 2024) **200** ×3, brand ไม่มีจริง → 400 JSON `Data not found` ×3, year ผิด → 400 `validate error` (ก่อน/หลัง Deploy `126f5ca` ผลเหมือนกัน = ไม่ Regress) — เคส HTML `<` ยืนยันด้วย Unit Test (`repository_test.go`) เพราะ uat-isv ไม่มี WAF บล็อก |
+| **17** | 🟡 บางส่วน | Unit Test HTML 502 → error `HTTP 502 non-JSON response` (ไม่ใช่ `'<'`) ✅ — ยิงอีเมลแนบ 1.4MB / 8.4MB ผ่าน Public Path เดิม → 200 ทั้งคู่ (1.1s / 2.9s) = **อาการ Prod ไม่ Reproduce บน uat-isv** (Gateway ตัด Payload อยู่หน้า `api.insurverse.co.th` ของ Prod) — ⛔ E2E `POST /api/v1/backoffice-lead-policy/leadpolicy/email` รอ User Backoffice ที่มีสิทธิ์ `RESEND_POLICY` |
 | 2, 19, 20 | ⏭️ ทดสอบ E2E ไม่ได้ | #2 Manual บน Salesforce, #19 Salesforce เป็นผู้เรียก, #20 เป็น SOP |
 
 > ⚠️ **#24/#25 ข้อจำกัด:** ไม่มีสิทธิ์ `kubectl` (ยังไม่ `gcloud auth login`) จึงยืนยันเวลาที่ pod ถูกแทนที่จริงจาก cluster ไม่ได้ อ้างอิงจากเวลา push + ระยะ pipeline ~5 นาที — Chart ไม่รองรับ `lifecycle` จึงใช้ sleep ในโค้ดแทน preStop (image distroless ไม่มี `/bin/sh`) — CI ใช้ `helm upgrade --force` ไม่มี `--reuse-values` ค่าต้องอยู่ใน `helm-*.yaml` เท่านั้น
@@ -126,7 +127,7 @@
 | **14** | **CMI Invalid Plate** | `uam-service` | `cmiRealtimeController.go` (ทำ Data Sanitization, Truncation, และ Plate Fallback) | ตาราง `Policy_Car_Act_Discount_Premium` ฟิลด์ `Car_license_no`, `Car_license_provice` | ✅ **แก้แล้วบน `main` (WS3)** / OIC Sanitization อยู่ใน `hotfix/oic-uat` |
 | **15** | **Short Link WAF Block** | `isv-test` | `short_link.go` (ขาด User-Agent, มี Double Slash ใน URL) | ไม่มี DB เกี่ยวข้อง (เรียก REST API ไปยัง WordPress Shortify ภายนอก) | ❌ **ยังไม่แก้บน `main`** — โค้ดแก้แล้วบน `fix/fx-01-isv-test` (`92688d2`) รวมเข้า `uat-isv` แล้ว (`4d21426`) |
 | **16** | **UAM Hairpin Loop** | `uam-service` | `helm/helm-prod.yaml:45` (`Backend_Notification` ชี้ออกเน็ตนอก) + `notificationController.go:54` defer bug | ตาราง `sec_user` (การยืนยัน Email/OTP) | ❌ **ยังไม่แก้บน `main` (วิกฤต)** (แก้ 1 บรรทัดใน Helm) |
-| **17** | **Backoffice Email Gateway Fail** | `lead-policy-service` | `helm/helm-prod.yaml:51` (`EMAIL_URL` ชี้ออกเน็ตนอก) แนบ PDF หลาย MB โดน Gateway ตัด 2.2s | ตาราง `lead_policy`, ไฟล์ PDF กรมธรรม์ใน Storage/DB | ❌ **ยังไม่แก้บน `main`** (เปลี่ยน Helm ชี้ Internal DNS) |
+| **17** | **Backoffice Email Gateway Fail** | `lead-policy-service` | `helm/helm-prod.yaml:51` (`EMAIL_URL` ชี้ออกเน็ตนอก) แนบ PDF หลาย MB โดน Gateway ตัด 2.2s | ตาราง `lead_policy`, ไฟล์ PDF กรมธรรม์ใน Storage/DB | ❌ **ยังไม่แก้บน `main`** — 🟡 uat-isv: โค้ด `e7a7fbf` + Helm Internal DNS `383013e` |
 | **18** | **Renewal missing ref_policy_no** | `purchase-service` | `paymentController.go:460` (บล็อก HTTP 400 ถ้า `ref_policy_no IS NULL`) | ตาราง `Lead_coverage_premium.ref_policy_no` ว่าง; Stored Proc `fn_policy_renewal` (WS7) ซ่อมผูกให้ | ⏳ **อยู่ที่ `uat-isv (WS7)`** (เคสจริงแก้ Manual SQL แล้ว) |
 | **19** | **SF Waterfall LB ตัด 30s** | `saleforce-service` | `policy_transacti_service.go` รัน Waterfall เกิน 30s ขาด `BackendConfig timeoutSec: 120` | Stored Proc: **`insurverse.fn_sf_policy_endorse_financial`** ประมวลผลหนักข้ามหลายตาราง | ⏳ **อยู่ที่ `hotfix/ws6-saleforce-endoesement`** |
 | **20** | **Cloud SQL CPU Spike 17:00** | Cloud SQL | ไม่มี Code Application เกี่ยวข้อง | Database Engine: ตรวจสอบ `pg_stat_activity`, Query Insights, Autovacuum, และ Daily EOD Batch Queries | ℹ️ **Operational SOP** (แนวทางปฏิบัติการ) |
@@ -136,7 +137,7 @@
 | **24** | **OAuth2 LB 503 ((no backend))** | `go-oauth2-server` | `helm/helm-prod.yaml` (`memory: 128Mi` OOMKill, `initialDelaySeconds: 60`) | ตาราง `oauth_access_tokens`, `oauth_clients` | ❌ **ยังไม่แก้บน `main`** (เพิ่ม Memory 256Mi, ลด Delay 15s) |
 | **25** | **Analytics CORS 503 ((no backend))** | `analytics-service` | `helm/helm-prod.yaml` (`initialDelaySeconds: 60` ขาด `lifecycle.preStop`) | ตาราง `analytics_events` | ❌ **ยังไม่แก้บน `main`** (ลด Delay 15s + ใส่ preStop hook) |
 | **26** | **2C2P Callback 502 TCP Drop** | `purchase-service` | `paymentController.go` ขจัด Go Panic ตอบกลับ HTTP 200 OK สมบูรณ์ (แก้คู่กับ Issue #21) | ตาราง `payment` เงินตัดและสร้าง `Policy_Header` ครบถ้วน | ✅ **แก้แล้วบน `main`** (Commit `af1dda7` / `89e58fe`) |
-| **27** | **OpenAPI Motor เบี้ยพัง ได้ HTML `<`** | `go-e-api` | `helm/helm-prod.yaml` (`ISV_HOST` ชี้เน็ตนอก) + `repository.go:50` ขาดการเช็ค HTTP Status Code ก่อน Unmarshal | ตาราง `mas_motor_*` และ `log_partner_api` | ❌ **ยังไม่แก้บน `main`** (เปลี่ยน Internal DNS + เช็ค Status Code) |
+| **27** | **OpenAPI Motor เบี้ยพัง ได้ HTML `<`** | `go-e-api` | `helm/helm-prod.yaml` (`ISV_HOST` ชี้เน็ตนอก) + `repository.go:50` ขาดการเช็ค HTTP Status Code ก่อน Unmarshal | ตาราง `mas_motor_*` และ `log_partner_api` | ❌ **ยังไม่แก้บน `main`** — ✅ uat-isv: เช็ค non-JSON `374cbca` (Internal DNS รอตัดสินใจ) |
 
 #### 🎯 สรุปการแบ่งความรับผิดชอบ (Code vs Database Stored Procedures)
 
@@ -731,7 +732,7 @@
 
 - **สถานะการแก้ไข (Status):**
   - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (`helm/helm-prod.yaml:51` ชี้ `EMAIL_URL` ออกเน็ตนอก แนบ PDF ใหญ่โดน Gateway ตัด 2.2s)
-  - **UAT-ISV (`origin/uat-isv`):** ⏳ **อยู่ระหว่างปรับ Helm ชี้ Internal DNS บน `uat-isv`** (เพื่อส่ง PDF ตรงเข้า Notification Service ใน Cluster ไม่ผ่าน Ingress Gateway)
+  - **UAT-ISV (`origin/uat-isv`):** 🟡 **แก้แล้ว (2026-09-23)** — `fix/fx-01-lead-policy` `e7a7fbf` (`utils/http_client.go` คืน `HTTP <code> non-JSON response` + snippet แทน `'<'`, JSON error body คืนเหมือนเดิม) merge เป็น `c2cdd6d` + `helm-uat-isv.yaml` `EMAIL_URL=http://backend-notification-service:8080/api/v1/notification/email` (`383013e`) — รอ E2E ผ่าน Backoffice (ต้องมีสิทธิ์ `RESEND_POLICY`)
 
 - **Log/ข้อความที่พบ:**
   ```text
@@ -1244,7 +1245,8 @@
 
 - **สถานะการแก้ไข (Status):**
   - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (`helm/helm-prod.yaml` `ISV_HOST` ชี้ Hairpin นอก Cluster + `repository.go:50` ขาดการตรวจสอบ HTTP Status Code ก่อน Unmarshal ทำให้ Code พังเมื่อเจอ HTML `<`)
-  - **UAT-ISV (`origin/uat-isv`):** ⏳ **อยู่ระหว่างปรับ `ISV_HOST` และ HTTP Status Code Check บน `uat-isv`**
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้โค้ดแล้ว + ผ่าน E2E (2026-09-23)** — `fix/fx-01-e-api` `374cbca`: `fetchGet`/`fetchPost` ใน motor + lead repository คืน `[url] HTTP <code> non-JSON response: <snippet>` เมื่อ Body ไม่ใช่ JSON (ครอบคลุม Unmarshal 8 จุด) merge เป็น `126f5ca`
+  - ⛔ **ห้ามใช้ `deploy_jobs/03_fixes/helm_patches/patch_go_e_api_prod.yaml` (ยกเลิกแล้ว):** `ISV_HOST` เป็น Host ร่วมของ `ISV_ENDPOINT_*` ทุกตัว (core, uam, purchase, premium `/api/v1/premium/premiumAPI`, consent) ชี้ไป `backend-core-service` อย่างเดียวจะทำให้ premium/purchase/uam ได้ 404 — การเลิก Hairpin ต้องแยก Host ตาม Service ในโค้ด (มีตัวอย่าง `ISV_HOST_UAM_INTERNAL` แล้ว) รอตัดสินใจ
 
 - **Log/ข้อความที่พบ:**
   ```text
