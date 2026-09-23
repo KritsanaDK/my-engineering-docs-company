@@ -1,6 +1,6 @@
 # Daily Troubleshooting Playbook & GCP Log Knowledge Base
 
-**Date:** 2026-09-15 (Audit Updated: 2026-09-21 - Production Release af1dda7)
+**Date:** 2026-09-15 (Audit Updated: 2026-09-23 - Post Release af1dda7 & WS1-UAT-ISV 059c275)
 **Topic:** GCP Production Logs Analysis & Resolution Guides (คู่มือวิเคราะห์และแก้ปัญหาจาก Log GCP)
 **Status:** Audited against Git `origin/main` (ตรวจสอบสถานะจริงเทียบกับ Branch Main ของทุกระบบ)
 
@@ -15,70 +15,70 @@
 
 ---
 
-## 2. 📑 สารบัญและชื่อปัญหาแบบสั้น (Short Issue Titles & Quick Reference)
+## 2. 📑 สารบัญและชื่อปัญหาแบบสั้น: เปรียบเทียบสถานะ main vs uat-isv (Quick Reference)
 
-| ลำดับ (No.) | ระดับ (Priority) | ชื่อปัญหาแบบสั้น (Short Title) | ระบบที่พบ (Service) | สถานะสภาพแวดล้อม (Environment Status) | ผลกระทบและสถานะล่าสุด (Impact & Current Detail) |
-| :---: | :---: | :--- | :--- | :---: | :--- |
-| **1** | **P1** | **IIA ไม่ส่ง / Log ไม่บอกเหตุผล** _(IIA Silent Fail)_ | `purchase` / `uam` | ✅ **แก้แล้วบน Prod (main)** | โค้ดบน `origin/main` (`edc8884`, `e0bfcd5`, `9d3b3a4`) มี Stage ชัดเจน + Retry Replica Lag |
-| **2** | **P1** | **SF มี Record ซ้ำ** _(Salesforce Duplicate Record)_ | `uam-service` | ⚠️ **Manual แก้บน SF** | Salesforce แจ้ง Duplicate Record ต้องลบ/รวมใน SF แล้วยิง API retry |
-| **3** | **P1** | **SF ขาดกรมธรรม์หลัก** _(SF Missing Parent Policy)_ | `uam-service` | ⏳ **อยู่ที่ uat-isv (WS6)** | บน Prod ยังต้องใช้ Manual Resend ใบแม่ (`MV`) ก่อนใบลูก (`MC-0026-I-031782`) |
-| **4** | **P2** | **Load Balancer ตัด 30s** _(GCP LB 30s Timeout)_ | `notification` | ❌ **ยังไม่แก้บน Prod** | `POST /get_noti_policy_expire` ค้าง 30s ตอบ 502 แต่ Service รันต่อ |
-| **5** | **P1** | **พ.ร.บ. ออกเลขแต่ข้าม IIA/SF** _(ACT Skipped IIA/SF)_ | `purchase-service` | ✅ **แก้แล้วบน Prod (WS1)** | DB ฟังก์ชัน `fn_lead_to_car_act` มี Advisory Lock แล้ว / ขาดแค่ Network Retry |
-| **6** | **P2** | **สลักหลังไม่ออก จาก Replica Lag** _(Endorsement Replica Lag)_ | `document` / `uam` | ❌ **ยังไม่แก้บน Prod** | `document-service` อ่าน Read Replica เร็วกว่าที่ Master ซิงก์ทัน |
-| **7** | **P0** | **2C2P เลข Invoice ซ้ำ ลูกค้าจ่ายไม่ได้** _(2C2P Invoice Lockout)_ | `purchase-service` | ✅ **แก้แล้วบน Prod (WS5)** | DB ฟังก์ชัน `fn_policy_invoiceno_iia` ใส่ Advisory Lock และ Loop Check แล้ว |
-| **8** | **P1** | **ประกันสมัครใจ (MV) ส่ง IIA ไม่ผ่านเงียบๆ** _(MV Silent IIA Fail)_ | `policy-service` | ✅ **แก้แล้วบน Prod (WS4/main)** | มี Reconcile Cron ดึงรายการตกหล่นส่งซ้ำเข้า IIA อัตโนมัติทุก 15 นาที + เช็คผลใน UAM |
-| **9** | **P1** | **PA/Home ไม่เข้า IIA เมื่อไม่ส่งไปรษณีย์** _(PA/Home NULL Address)_ | `purchase-service` | ✅ **แก้แล้วบน Prod (21 ก.ย. 2026)** | แก้ struct รับ pointer `*string` ใน Go ไม่แก้ SQL (Commit `648f298`, `af1dda7`) |
-| **10** | **P0** | **ส่งตัดเงินซ้ำได้แม้ Lead จ่ายสำเร็จแล้ว** _(Repeat Charge Bypass)_ | `purchase-service` | ✅ **แก้แล้วบน Prod (21 ก.ย. 2026)** | แก้ `NamedExec` บน SELECT เป็น `SELECT EXISTS` ป้องกันจ่ายซ้ำ (Commit `c299fe4`, `af1dda7`) |
-| **11** | **P2** | **ส่ง SMS ต่ออายุผิด ทั้งที่ซื้อ พ.ร.บ. ใหม่แล้ว** _(False Renewal SMS)_ | `notification` | ⏳ **อยู่ที่ uat-isv (WS7)** | ตรวจสอบอายุ 90 วันและเลขตัวถังอยู่ใน `fn_policy_renewal` (WS7) บน uat-isv |
-| **12** | **P2** | **Home Service HTTP 500 ไร้ Error Log** _(Silent 500 on GetLead)_ | `home-service` | ❌ **ยังไม่แก้บน Prod** | เปรียบเทียบ Error string ไม่ตรง ทำให้ NoRows กลายเป็น 500 ไม่มี Log (มี branch `hot-fix-getlead`) |
-| **13** | **P0** | **Motor Lead ชนซ้ำจาก MAX()+1** _(Motor Lead MAX+1 Race)_ | `nodejs-express-premium-service` | ⏳ **อยู่ที่ uat-isv (Sequence)** | แก้ใน branch `fix/motor-lead-no-sequence` (d20771f) เปลี่ยนใช้ Sequence รอขึ้น Prod |
-| **14** | **P1** | **CMI ปฏิเสธทะเบียนผิดมาตรฐาน ขบ.** _(CMI Invalid Plate 2BUS0216)_ | `uam-service` / `policy-service` | ✅ **แก้แล้วบน Prod (WS3)** | WS3 กรองทะเบียน/จังหวัดแล้ว / กรณีหลุดฟอร์แมตมากยังใช้ Manual SQL แก้ |
-| **15** | **P1** | **URL Shortener โดน Cloudflare บล็อก** _(Short Link WAF Block)_ | `isv-test` | ❌ **ยังไม่แก้บน Prod** | `POST /short_link` ตอบ 86 ms HTML `cf-error-details` (Go User-Agent / Double Slash) |
-| **16** | **P0** | **UAM Email & OTP ล่มทั้งระบบ** _(UAM Hairpin Loop Failure)_ | `uam-service` | ❌ **ยังไม่แก้บน Prod (วิกฤต)** | `validate_email` ตอบ 500 (`<nil>`) เพราะ Helm prod ชี้ Hairpin นอก Cluster |
-| **17** | **P1** | **Backoffice ส่ง Policy Email ล้มเหลว** _(Large PDF Resend Gateway Fail)_ | `lead-policy-service` | ❌ **ยังไม่แก้บน Prod** | แนบ PDF ใหญ่ยิงออก Hairpin นอก Cluster โดน Gateway ตัด 2.2s พ่น Error `<` (HTML) |
-| **18** | **P0** | **ลูกค้าชำระเงินต่ออายุไม่ได้** _(Missing ref_policy_no on Renewal)_ | `purchase-service` | ⏳ **อยู่ที่ uat-isv (WS7)** | เคสจริงแก้ SQL แล้ว / Guard ป้องกันข้อมูลหลุดถาวรอยู่ใน WS7 บน uat-isv |
-| **19** | **P1** | **Salesforce API โดน GCP LB ตัด 30s** _(SF Endorsement Waterfall Timeout)_ | `saleforce-service` | ⏳ **อยู่ที่ uat-isv (WS6)** | งานปรับลด Waterfall อยู่ใน WS6 บน uat-isv (GCP LB Timeout ยังเป็น 30s) |
-| **20** | **P2** | **Cloud SQL CPU Spike 17:00 SOP** _(EOD Batch vs Deploy Diagnostic)_ | Cloud SQL (`insureverse-prod`) | ℹ️ **SOP คู่มือปฏิบัติการ** | CPU พุ่ง 28.4% (ปกติ 8.48%) SOP ให้เช็ค Query Insights ก่อนสรุปว่าเกิดจาก Deploy |
-| **21** | **P0** | **2C2P Callback Panic จาก Type Assertion** _(Salesforce Auth Nil Panic)_ | `purchase-service` | ✅ **แก้แล้วบน Prod (21 ก.ย. 2026)** | แก้ nil check ใน `saleforce.go` + ใส่ `sync.RWMutex` ป้องกัน race condition (Commit `89e58fe`, `af1dda7`) |
-| **22** | **P0** | **ต่อ TLS ไม่ผ่าน (ใบรับรองไม่ถูก trust) — อีเมลกรมธรรม์ส่งไม่ออก** _(SMTP TLS Unknown Authority)_ | `notification-service` | ✅ **แก้แล้วบน Prod (main)** | อัปเกรดเป็น Distroless Debian 12 (Commit `700776d` / MR `ca1989b`) รองรับ GlobalSign Root R46 |
-| **23** | **P1** | **OCR Passport Reader ล่มจาก DNS NXDOMAIN** _(OCR MRZ DNS Fail)_ | `uam-service` | ❌ **ยังไม่แก้บน Prod** | สแกน Passport OCR ไม่ได้ (500) DNS หา `api.ekycsolution.com` ไม่เจอ (no such host) |
-| **24** | **P2** | **GCP LB 503 ((no backend)) บน Partner Token** _(OAuth2 NEG Drop)_ | `openapi-oauth-service` | ❌ **ยังไม่แก้บน Prod** | LB หา Pod ไม่เจอ ตอบ 503 ไร้ Log ใน Service จาก Readiness Delay 60s / Mem Limit 128Mi |
-| **25** | **P2** | **CORS OPTIONS 503 ((no backend)) บน Analytics** _(Analytics Preflight Drop)_ | `backend-analytics-service` | ❌ **ยังไม่แก้บน Prod** | Browser Preflight ติด 503 บล็อกการยิง Event จาก Readiness Probe 60s |
-| **26** | **P0** | **2C2P Callback 502 Pod ปิดสายหนี (3.1s)** _(2C2P Callback TCP Drop)_ | `purchase-service` | ✅ **แก้แล้วบน Prod (21 ก.ย. 2026)** | ป้องกัน Go Panic ตัดวงจร 502 TCP Drop ตอบกลับ 200 OK สมบูรณ์ (Commit `89e58fe`, `af1dda7`) |
-| **27** | **P1** | **OpenAPI Motor เบี้ยพัง ได้รับ HTML `<` (503)** _(OpenAPI Hairpin HTML Parse Fail)_ | `openapi-motor-service` | ❌ **ยังไม่แก้บน Prod** | Partner ขอเบี้ย/สร้าง Lead ไม่ได้ (503) โค้ดพังจาก HTML หน้า WAF/LB แทน JSON (106ms) |
+| ลำดับ (No.) | ระดับ | ชื่อปัญหาแบบสั้น (Short Title) | ระบบที่พบ (Service) | 1. แก้ไขรึยัง<br>(Fix Ready) | 2. UAT-ISV<br>(Tested) | 3. PROD<br>(Live) | ผลกระทบและสถานะล่าสุด (Impact & Detail) |
+| :---: | :---: | :--- | :--- | :---: | :---: | :---: | :--- |
+| **1** | **P1** | **IIA ไม่ส่ง / Log ไม่บอกเหตุผล** _(IIA Silent Fail)_ | `purchase` / `uam` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | โค้ดบน `origin/main` (`edc8884`, `e0bfcd5`, `9d3b3a4`) มี Stage ชัดเจน + Retry Replica Lag |
+| **2** | **P1** | **SF มี Record ซ้ำ** _(Salesforce Duplicate Record)_ | `uam-service` | ✅ ทำ Guard แล้ว | ⚠️ Manual | ⚠️ Manual | Salesforce แจ้ง Duplicate Record ต้องลบ/รวมใน SF (เสริม safe pointer check `059c275`) |
+| **3** | **P1** | **SF ขาดกรมธรรม์หลัก** _(SF Missing Parent Policy)_ | `uam-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | มี Stored Proc `fn_sf_policy_endorse_financial` จัดการ Parent MV ก่อน Child MC (WS6) |
+| **4** | **P2** | **Load Balancer ตัด 30s** _(GCP LB 30s Timeout)_ | `notification` | ✅ แก้แล้ว | ✅ ขึ้น uat-isv แล้ว | ⏳ รอขึ้น Prod | แก้เป็น Async Worker (Commit `ae17af1` บน branch `fix/fx-01-notification`) + K8s BackendConfig 300s ใน `deploy_jobs/03_fixes/` |
+| **5** | **P1** | **พ.ร.บ. ออกเลขแต่ข้าม IIA/SF** _(ACT Skipped IIA/SF)_ | `purchase-service` | ✅ แก้แล้ว (DB) | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว (DB) | DB ฟังก์ชัน `fn_lead_to_car_act` มี Advisory Lock แล้ว ป้องกันเลขชน (รอเสริม Worker ใน Go) |
+| **6** | **P2** | **สลักหลังไม่ออก จาก Replica Lag** _(Endorsement Replica Lag)_ | `document` / `uam` | ✅ แก้แล้ว | ✅ ขึ้น uat-isv แล้ว | ⏳ รอขึ้น Prod | แก้เป็น Exponential Backoff Retry (Commit `35c58b7` บน branch `fix/fx-01-document`) |
+| **7** | **P0** | **2C2P เลข Invoice ซ้ำ ลูกค้าจ่ายไม่ได้** _(2C2P Invoice Lockout)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | DB ฟังก์ชัน `fn_policy_invoiceno_iia` ใส่ Advisory Lock และ Loop Check แล้ว ป้องกัน 100% |
+| **8** | **P1** | **ประกันสมัครใจ (MV) ส่ง IIA ไม่ผ่านเงียบๆ** _(MV Silent IIA Fail)_ | `policy-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | Reconcile Cron ดึงรายการตกหล่นส่งซ้ำเข้า IIA อัตโนมัติทุก 15 นาที + เช็คผลใน UAM |
+| **9** | **P1** | **PA/Home ไม่เข้า IIA เมื่อไม่ส่งไปรษณีย์** _(PA/Home NULL Address)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | แก้ struct รับ pointer `*string` ใน Go ไม่แก้ SQL (Commit `648f298`, `af1dda7`) |
+| **10** | **P0** | **ส่งตัดเงินซ้ำได้แม้ Lead จ่ายสำเร็จแล้ว** _(Repeat Charge Bypass)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | แก้ `NamedExec` บน SELECT เป็น `SELECT 1 ... LIMIT 1` ป้องกันจ่ายซ้ำ (`c299fe4`, `af1dda7`) |
+| **11** | **P2** | **ส่ง SMS ต่ออายุผิด ทั้งที่ซื้อ พ.ร.บ. ใหม่แล้ว** _(False Renewal SMS)_ | `notification` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | ตรวจสอบอายุ 90 วันและเลขตัวถังอยู่ใน `fn_policy_renewal` (WS7) บน uat-isv รอขึ้น Prod |
+| **12** | **P2** | **Home Service HTTP 500 ไร้ Error Log** _(Silent 500 on GetLead)_ | `home-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เปรียบเทียบ Error string ไม่ตรง (รวม branch `hot-fix-getlead` แล้วบน uat-isv รอขึ้น Prod) |
+| **13** | **P0** | **Motor Lead ชนซ้ำจาก MAX()+1** _(Motor Lead MAX+1 Race)_ | `nodejs-express-premium-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | แก้ใน branch `fix/motor-lead-no-sequence` (`d20771f`) เปลี่ยนใช้ Sequence รอขึ้น Prod |
+| **14** | **P1** | **CMI ปฏิเสธทะเบียนผิดมาตรฐาน ขบ.** _(CMI Invalid Plate 2BUS0216)_ | `uam-service` / `policy-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | WS3 กรองทะเบียน/จังหวัดแล้ว + OIC Sanitization ใน `hotfix/oic-uat` |
+| **15** | **P1** | **URL Shortener โดน Cloudflare บล็อก** _(Short Link WAF Block)_ | `isv-test` | ❌ ยังไม่แก้ | ❌ ยังไม่มี | ❌ ยังมีปัญหา | `POST /short_link` ติด WAF บล็อก (ขาด Custom User-Agent / Double Slash) |
+| **16** | **P0** | **UAM Email & OTP ล่มทั้งระบบ** _(UAM Hairpin Loop Failure)_ | `uam-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_uam_prod.yaml` ชี้ Internal DNS แล้ว |
+| **17** | **P1** | **Backoffice ส่ง Policy Email ล้มเหลว** _(Large PDF Resend Gateway Fail)_ | `lead-policy-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_lead_policy_prod.yaml` แล้ว |
+| **18** | **P0** | **ลูกค้าชำระเงินต่ออายุไม่ได้** _(Missing ref_policy_no on Renewal)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | Guard ป้องกันข้อมูลหลุดถาวรอยู่ใน WS7 บน uat-isv (`fn_policy_renewal`) รอขึ้น Prod |
+| **19** | **P1** | **Salesforce API โดน GCP LB ตัด 30s** _(SF Endorsement Waterfall Timeout)_ | `saleforce-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | งานปรับลด Waterfall อยู่ใน WS6 บน uat-isv รอขึ้น Prod |
+| **20** | **P2** | **Cloud SQL CPU Spike 17:00 SOP** _(EOD Batch vs Deploy Diagnostic)_ | Cloud SQL (`insureverse-prod`) | ℹ️ มี SOP | ℹ️ ใช้งานอยู่ | ℹ️ ใช้งานอยู่ | CPU พุ่ง 28.4% จาก Daily EOD Batch SOP ให้เช็ค Query Insights ก่อนสรุปว่าเกิดจาก Deploy |
+| **21** | **P0** | **2C2P Callback Panic จาก Type Assertion** _(Salesforce Auth Nil Panic)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | แก้ nil check ใน `saleforce.go` + `sync.RWMutex` (เสริม safe `sf_account` `059c275`) |
+| **22** | **P0** | **ต่อ TLS ไม่ผ่าน (ใบรับรองไม่ถูก trust) — อีเมลไม่ออก** _(SMTP TLS Unknown Authority)_ | `notification-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | อัปเกรดเป็น Distroless Debian 12 รองรับ GlobalSign Root R46 (`700776d`) |
+| **23** | **P1** | **OCR Passport Reader ล่มจาก DNS NXDOMAIN** _(OCR MRZ DNS Fail)_ | `uam-service` | ❌ ยังไม่แก้ | ❌ ยังไม่มี | ❌ ยังมีปัญหา | สแกน Passport OCR ล่มจาก DNS หา eKYC ไม่เจอ ขาด Graceful Fallback กรอกมือ |
+| **24** | **P2** | **GCP LB 503 ((no backend)) บน Partner Token** _(OAuth2 NEG Drop)_ | `openapi-oauth-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_oauth2_prod.yaml` (Mem 256Mi/15s) แล้ว |
+| **25** | **P2** | **CORS OPTIONS 503 ((no backend)) บน Analytics** _(Analytics Preflight Drop)_ | `backend-analytics-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_analytics_prod.yaml` (PreStop) แล้ว |
+| **26** | **P0** | **2C2P Callback 502 Pod ปิดสายหนี (3.1s)** _(2C2P Callback TCP Drop)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | ขจัด Go Panic ตัดวงจร 502 TCP Drop ตอบกลับ 200 OK สมบูรณ์ (แก้คู่กับ #21) |
+| **27** | **P1** | **OpenAPI Motor เบี้ยพัง ได้รับ HTML `<` (503)** _(OpenAPI Hairpin HTML Parse Fail)_ | `openapi-motor-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_go_e_api_prod.yaml` ชี้ Internal DNS แล้ว |
 
 ### 📌 สรุปสถานะสภาพแวดล้อม (Environment Status Summary)
 
 | สถานะสภาพแวดล้อม (Environment Status) | จำนวน (Count) | รายการปัญหา (Issues Included) | รายละเอียดและความพร้อมในการปล่อยระบบ (Details & Deployment Readiness) |
 | :--- | :---: | :--- | :--- |
 | **✅ แก้แล้วบน Production (main / WS1–WS5 + 21 ก.ย. Release)** | **10 ข้อ** | **Issue #1, #5, #7, #8, #9, #10, #14, #21, #22, #26** | • **#1:** แก้ไขใน `go-echo-uam-service` (`edc8884`, `e0bfcd5`, `9d3b3a4`) แยก Stage Error และ Retry Replica Lag <br>• **#5, #7:** ปัญหา Concurrency DB Function (`fn_lead_to_car_act`, `fn_policy_invoiceno_iia`) เรียบร้อยแล้ว <br>• **#8, #14:** Reconcile IIA และ CMI Regex ทำงานแล้วบน Prod <br>• **#9, #10, #21, #26:** Deploy ขึ้น Production ผ่าน Commit `af1dda7` (21 ก.ย. 2026) แก้ PA/Home Null Address Pointer, NamedExec SELECT ป้องกันจ่ายซ้ำ, และ SF Auth Thread-Safety/Nil Panic ขจัดปัญหา 502 TCP Drop 100% <br>• **#22:** แก้ไขแล้วผ่าน Commit `700776d` (MR `ca1989b`) อัปเกรดเป็น Debian 12 รองรับ GlobalSign Root R46 |
-| **⏳ อยู่ที่ Branch อื่น / UAT-ISV (WS6–WS9 / Hotfix)** | **5 ข้อ** | **Issue #3, #11, #13, #18, #19** | โค้ดและสคริปต์แก้เสร็จแล้ว อยู่ระหว่างทดสอบบน `uat-isv` หรือ Hotfix Branch รอคิว Deploy ขึ้น Prod (เช่น SF Endorsement WS6, Renewal 90 วัน WS7, Motor Lead Sequence บน `origin/fix/motor-lead-no-sequence`) |
+| **⏳ อยู่ที่ Branch อื่น / UAT-ISV / พร้อมขึ้น Prod** | **7 ข้อ** | **Issue #3, #4, #6, #11, #13, #18, #19** | โค้ดและสคริปต์แก้เสร็จแล้ว Deploy และทดสอบบน `uat-isv` แล้ว รอคิว Deploy ขึ้น Prod (เช่น SF Endorsement WS6, Renewal 90 วัน WS7, Motor Lead Sequence, **#4 Async Notification**, และ **#6 Endorsement Retry `fix/fx-01-document`**) |
 | **⚠️ ดำเนินการแก้ปัญหาเฉพาะหน้า (Manual Ops)** | **1 ข้อ** | **Issue #2** | การรวม/ลบ Duplicate Record ใน Salesforce แล้วยิง API สั่ง Re-trigger |
-| **❌ ยังไม่ได้แก้ไขบน Production (main)** | **10 ข้อ** | **Issue #4, #6, #12, #15, #16, #17, #23, #24, #25, #27** | โค้ด/คอนฟิกบน `main` ยังไม่ได้รับการแก้ไข แนะนำทำ **Hotfix เร่งด่วน P0:** <br>• **#16:** แก้ `helm/helm-prod.yaml` ของ `uam-service` ชี้ Internal DNS (หยุด Hairpin Loop) <br>• **#13:** รัน Sequence Migration และปล่อย `nodejs-express-premium-service` ขึ้น Prod |
+| **❌ ยังไม่ได้แก้ไขบน Production (main)** | **8 ข้อ** | **Issue #12, #15, #16, #17, #23, #24, #25, #27** | โค้ด/คอนฟิกบน `main` ยังไม่ได้รับการแก้ไข (โดย **#16, #17, #24, #25, #27** จัดเตรียม Patch พร้อมขึ้นไว้ใน `deploy_jobs/03_fixes/` แล้ว) |
 | **ℹ️ แนวทางปฏิบัติการ (Operational SOP)** | **1 ข้อ** | **Issue #20** | SOP ตรวจสอบ Cloud SQL CPU ช่วง 17:00 ให้เช็ค Query Insights แยกแยะ Daily Batch ก่อนตัดสินใจ Rollback |
 | **รวมทั้งหมด (Total)** | **27 ข้อ** | **ครอบคลุม 27 ปัญหาเชิงระบบ** | |
 
 ---
 
-### 🏢 2.1 ตารางจัดกลุ่มปัญหาตามระบบและเซอร์วิส (Issues Grouped by Service)
+### 🏢 2.1 ตารางจัดกลุ่มปัญหาตามระบบและเซอร์วิส: เปรียบเทียบสถานะ main vs uat-isv (Issues Grouped by Service)
 
-| ลำดับ | ระบบ / ไมโครเซอร์วิส (Service Name) | จำนวนปัญหา | รายการปัญหา (Issues Included) | ระดับความสำคัญ | สถานะบน Main / Branch ล่าสุด |
-| :---: | :--- | :---: | :--- | :---: | :--- |
-| **1** | **`go-echo-purchase-service`** | **6 ข้อ** | • **Issue #5:** พ.ร.บ. ออกเลขแต่ข้าม IIA/SF <br>• **Issue #7:** 2C2P เลข Invoice ซ้ำ ลูกค้าจ่ายไม่ได้ <br>• **Issue #9:** PA/Home deli_address_th = NULL <br>• **Issue #10:** NamedExec SELECT จ่ายซ้ำทะลุ <br>• **Issue #18:** Renewal missing ref_policy_no <br>• **Issue #21 & #26:** 2C2P SF Auth Nil Panic & 502 TCP Drop | **P0 (4)**<br>P1 (2) | • **#5, #7, #9, #10, #21, #26:** ✅ แก้และ Deploy แล้วบน `origin/main` (Commit `af1dda7`) <br>• **#18:** ⏳ อยู่บน `origin/hotfix/ws7-renew` |
-| **2** | **`go-echo-uam-service`** | **6 ข้อ** | • **Issue #1:** IIA Silent Fail <br>• **Issue #2:** SF มี Record ซ้ำ <br>• **Issue #3:** SF ขาดกรมธรรม์หลัก (Parent Policy) <br>• **Issue #14:** CMI ปฏิเสธทะเบียน ขบ. (Regex) <br>• **Issue #16:** UAM Hairpin Loop Email & OTP <br>• **Issue #23:** OCR Passport MRZ DNS NXDOMAIN | **P0 (1)**<br>P1 (5) | • **#1, #14:** ✅ แก้แล้วบน `origin/main` <br>• **#2:** ⚠️ จัดการ Manual บน Salesforce <br>• **#3:** ⏳ อยู่บน `uat-isv (WS6)` <br>• **#16, #23:** ❌ ยังไม่แก้บน `origin/main` |
-| **3** | **`go-echo-notification-service`** | **3 ข้อ** | • **Issue #4:** GCP LB ตัด 30s (`get_noti_policy_expire`) <br>• **Issue #11:** ส่ง SMS ต่ออายุผิด ทั้งที่ซื้อใหม่แล้ว <br>• **Issue #22:** SMTP TLS Unknown Authority (อีเมลไม่ออก) | **P0 (1)**<br>P2 (2) | • **#22:** ✅ แก้แล้วบน `origin/main` (Distroless Debian 12) <br>• **#4:** ❌ ยังไม่แก้บน `origin/main` (ขาด BackendConfig 300s) <br>• **#11:** ⏳ อยู่บน `uat-isv (WS7)` |
-| **4** | **`nodejs-express-premium-service`** | **1 ข้อ** | • **Issue #13:** Motor Lead ชนซ้ำจาก `MAX()+1` Race | **P0 (1)** | ⏳ อยู่บน `origin/fix/motor-lead-no-sequence` (d20771f) รอ DDL และขึ้น `main` |
-| **5** | **`go-fiber-policy-service`** | **1 ข้อ** | • **Issue #8:** ประกันสมัครใจ (MV) ส่ง IIA ไม่ผ่านเงียบๆ | **P1 (1)** | ✅ แก้แล้วบน `origin/main` (WS4 Reconcile Cron ส่งซ้ำอัตโนมัติ) |
-| **6** | **`go-echo-saleforce-service`** | **1 ข้อ** | • **Issue #19:** Salesforce API Waterfall โดน LB ตัด 30s | **P1 (1)** | ⏳ อยู่บน `origin/hotfix/ws6-saleforce-endoesement` (ขาด BackendConfig 120s) |
-| **7** | **`go-echo-lead-policy-service`** | **1 ข้อ** | • **Issue #17:** Backoffice ส่ง Policy Email ล้มเหลว (PDF ใหญ่) | **P1 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` ชี้ Hairpin นอก Cluster) |
-| **8** | **`go-e-api` (OpenAPI Motor)** | **1 ข้อ** | • **Issue #27:** OpenAPI Motor เบี้ยพัง ได้รับ HTML `<` (503) | **P1 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` ชี้ Hairpin นอก Cluster) |
-| **9** | **`isv-test`** | **1 ข้อ** | • **Issue #15:** URL Shortener โดน Cloudflare WAF บล็อก | **P1 (1)** | ❌ ยังไม่แก้บน `origin/main` (ขาด Custom User-Agent & Trim Slash) |
-| **10** | **`go-echo-home-service`** | **1 ข้อ** | • **Issue #12:** Home Service GetLead HTTP 500 ไร้ Error Log | **P2 (1)** | ❌ ยังไม่แก้บน `origin/main` (Error String Mismatch ใน `home_service.go`) |
-| **11** | **`python-fastapi-document-service`** | **1 ข้อ** | • **Issue #6:** เอกสารสลักหลังไม่ออก จาก Replica Lag | **P2 (1)** | ❌ ยังไม่แก้บน `origin/main` (ขาด ErrNoRows Retry Backoff) |
-| **12** | **`go-oauth2-server`** | **1 ข้อ** | • **Issue #24:** GCP LB 503 ((no backend)) บน Partner Token | **P2 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` Mem 128Mi / Delay 60s) |
-| **13** | **`go-echo-analytics-service`** | **1 ข้อ** | • **Issue #25:** CORS OPTIONS 503 ((no backend)) Preflight | **P2 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` Delay 60s ขาด preStop hook) |
-| **14** | **Google Cloud SQL (`insureverse-prod`)** | **1 ข้อ** | • **Issue #20:** Cloud SQL CPU Spike 17:00 SOP | **P2 (1)** | ℹ️ **Operational SOP** (คู่มือ Query Insights แยกแยะ EOD Batch) |
-| **รวม** | **14 ระบบ / เซอร์วิส** | **27 ข้อ** | **ครอบคลุมครบ 27 ปัญหาเชิงระบบ** | **P0: 8, P1: 12, P2: 7** | **10 แก้บน main, 5 รอ Branch, 1 Manual, 1 SOP, 10 ค้างแก้** |
+| ลำดับ | ระบบ / ไมโครเซอร์วิส (Service Name) | จำนวน | รายการปัญหา (Issues Included) | ระดับความสำคัญ | สถานะบน `main` (Production) | สถานะบน `uat-isv` |
+| :---: | :--- | :---: | :--- | :---: | :--- | :--- |
+| **1** | **`go-echo-purchase-service`** | **6 ข้อ** | • **Issue #5:** พ.ร.บ. ออกเลขแต่ข้าม IIA/SF <br>• **Issue #7:** 2C2P เลข Invoice ซ้ำ ลูกค้าจ่ายไม่ได้ <br>• **Issue #9:** PA/Home deli_address_th = NULL <br>• **Issue #10:** NamedExec SELECT จ่ายซ้ำทะลุ <br>• **Issue #18:** Renewal missing ref_policy_no <br>• **Issue #21 & #26:** 2C2P SF Auth Nil Panic & 502 TCP Drop | **P0 (4)**<br>P1 (2) | • **#5, #7, #9, #10, #21, #26:** ✅ แก้และ Deploy แล้วบน `origin/main` (Commit `af1dda7`) <br>• **#18:** ⏳ อยู่บน `origin/hotfix/ws7-renew` รอขึ้น Prod | • **#5, #7, #9, #10, #21, #26:** ✅ รวมบน `uat-isv` แล้ว <br>• **#18:** ✅ รวมใน WS7 บน `uat-isv` แล้ว <br>• **#21:** 🛡️ เสริม safe dereference `sf_account` (Commit `059c275` / `263a6ee`) |
+| **2** | **`go-echo-uam-service`** | **6 ข้อ** | • **Issue #1:** IIA Silent Fail <br>• **Issue #2:** SF มี Record ซ้ำ <br>• **Issue #3:** SF ขาดกรมธรรม์หลัก (Parent Policy) <br>• **Issue #14:** CMI ปฏิเสธทะเบียน ขบ. (Regex) <br>• **Issue #16:** UAM Hairpin Loop Email & OTP <br>• **Issue #23:** OCR Passport MRZ DNS NXDOMAIN | **P0 (1)**<br>P1 (5) | • **#1, #14:** ✅ แก้แล้วบน `origin/main` <br>• **#2:** ⚠️ จัดการ Manual บน Salesforce <br>• **#3:** ⏳ อยู่บน `uat-isv (WS6)` รอขึ้น Prod <br>• **#16, #23:** ❌ ยังไม่แก้บน `origin/main` | • **#1, #14:** ✅ รวมบน `uat-isv` <br>• **#3:** ✅ รวมใน WS6 บน `uat-isv` แล้ว <br>• **#16:** ✅ แก้แล้วบน `uat-isv` (`helm-uat-isv.yaml` ชี้ Internal DNS `backend-notification-service:8080`) <br>• **#23:** ⏳ ทดสอบ Fallback บน `uat-isv` |
+| **3** | **`go-echo-notification-service`** | **3 ข้อ** | • **Issue #4:** GCP LB ตัด 30s (`get_noti_policy_expire`) <br>• **Issue #11:** ส่ง SMS ต่ออายุผิด ทั้งที่ซื้อใหม่แล้ว <br>• **Issue #22:** SMTP TLS Unknown Authority (อีเมลไม่ออก) | **P0 (1)**<br>P2 (2) | • **#22:** ✅ แก้แล้วบน `origin/main` (Distroless Debian 12) <br>• **#4:** ❌ ยังไม่แก้บน `origin/main` (ขาด BackendConfig 300s) <br>• **#11:** ⏳ อยู่บน `uat-isv (WS7)` รอขึ้น Prod | • **#22:** ✅ รวมบน `uat-isv` <br>• **#11:** ✅ รวมใน WS7 (`fn_policy_renewal` เช็ค Chassis 90 วัน) <br>• **#4:** ✅ รวมและ Deploy บน `uat-isv` แล้ว (Async Worker + Concurrency Guard) |
+| **4** | **`nodejs-express-premium-service`** | **1 ข้อ** | • **Issue #13:** Motor Lead ชนซ้ำจาก `MAX()+1` Race | **P0 (1)** | ⏳ อยู่บน `origin/fix/motor-lead-no-sequence` (d20771f) รอ DDL และขึ้น `main` | ✅ แก้และทดสอบแล้วบน `uat-isv` (ใช้ Sequence `seq_motor_lead_no`) |
+| **5** | **`go-fiber-policy-service`** | **1 ข้อ** | • **Issue #8:** ประกันสมัครใจ (MV) ส่ง IIA ไม่ผ่านเงียบๆ | **P1 (1)** | ✅ แก้แล้วบน `origin/main` (WS4 Reconcile Cron ส่งซ้ำอัตโนมัติ) | ✅ รวมบน `uat-isv` แล้ว (WS4 + OIC Compliant) |
+| **6** | **`go-echo-saleforce-service`** | **1 ข้อ** | • **Issue #19:** Salesforce API Waterfall โดน LB ตัด 30s | **P1 (1)** | ⏳ อยู่บน `origin/hotfix/ws6-saleforce-endoesement` รอขึ้น Prod | ✅ รวมบน `uat-isv` แล้ว (WS6 ปรับลด Waterfall) |
+| **7** | **`go-echo-lead-policy-service`** | **1 ข้อ** | • **Issue #17:** Backoffice ส่ง Policy Email ล้มเหลว (PDF ใหญ่) | **P1 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` ชี้ Hairpin นอก Cluster) | ⏳ ปรับ Helm ชี้ Internal DNS บน `uat-isv` |
+| **8** | **`go-e-api` (OpenAPI Motor)** | **1 ข้อ** | • **Issue #27:** OpenAPI Motor เบี้ยพัง ได้รับ HTML `<` (503) | **P1 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` ชี้ Hairpin นอก Cluster) | ⏳ ปรับ `ISV_HOST` และ HTTP Status Code Check บน `uat-isv` |
+| **9** | **`isv-test`** | **1 ข้อ** | • **Issue #15:** URL Shortener โดน Cloudflare WAF บล็อก | **P1 (1)** | ❌ ยังไม่แก้บน `origin/main` (ขาด Custom User-Agent & Trim Slash) | ⏳ ทดสอบ Custom Header บน `uat-isv` |
+| **10** | **`go-echo-home-service`** | **1 ข้อ** | • **Issue #12:** Home Service GetLead HTTP 500 ไร้ Error Log | **P2 (1)** | ❌ ยังไม่แก้บน `origin/main` (Error String Mismatch ใน `home_service.go`) | ✅ รวม branch `hot-fix-getlead` บน `uat-isv` แล้ว |
+| **11** | **`python-fastapi-document-service`** | **1 ข้อ** | • **Issue #6:** เอกสารสลักหลังไม่ออก จาก Replica Lag | **P2 (1)** | ⏳ อยู่บน `fix/fx-01-document` (Commit `35c58b7`) รอขึ้น `main` | ✅ รวมและ Deploy บน `uat-isv` แล้ว (เพิ่ม Exponential Backoff Retry 3 ครั้ง ป้องกัน Replica Lag) |
+| **12** | **`go-oauth2-server`** | **1 ข้อ** | • **Issue #24:** GCP LB 503 ((no backend)) บน Partner Token | **P2 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` Mem 128Mi / Delay 60s) | ✅ แก้แล้วบน `uat-isv` (`helm-uat-isv.yaml` Mem 256Mi / Delay 15s) |
+| **13** | **`go-echo-analytics-service`** | **1 ข้อ** | • **Issue #25:** CORS OPTIONS 503 ((no backend)) Preflight | **P2 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` Delay 60s ขาด preStop hook) | ✅ แก้แล้วบน `uat-isv` (`helm-uat-isv.yaml` Delay 15s) |
+| **14** | **Google Cloud SQL (`insureverse-prod`)** | **1 ข้อ** | • **Issue #20:** Cloud SQL CPU Spike 17:00 SOP | **P2 (1)** | ℹ️ **Operational SOP** (คู่มือ Query Insights แยกแยะ EOD Batch) | ℹ️ **Operational SOP** (คู่มือ Query Insights แยกแยะ EOD Batch) |
+| **รวม** | **14 ระบบ / เซอร์วิส** | **27 ข้อ** | **ครอบคลุมครบ 27 ปัญหาเชิงระบบ** | **P0: 8, P1: 12, P2: 7** | **10 แก้บน main, 7 อยู่บน UAT/รอขึ้น Prod, 1 Manual, 1 SOP, 8 ค้างแก้** | **21 แก้/รวมแล้วบน uat-isv, 4 อยู่ระหว่างทดสอบ, 1 Manual, 1 SOP** |
 
 ---
 
@@ -91,13 +91,13 @@
 | **1** | **IIA Silent Fail** | `uam-service` | `soapController.go` (สร้าง struct `IIAError`, ดัก stage, retry replica lag) | ไม่มี Stored Proc โดยตรง; อ่านตาราง `Policy_Car_Act_Discount_Premium` 6 queries และบันทึก `log_iia_policy` | ✅ **แก้แล้วบน `main`** (Commits: `edc8884`, `e0bfcd5`, `9d3b3a4`) |
 | **2** | **SF Duplicate Record** | `uam-service` | `salesforceController.go` (ยิง Apex REST `/upsertpolicy`) | Stored Proc: `fn_check_sf_account` ตรวจสอบ user; ปัญหาเกิดจาก Duplicate Rules ฝั่ง Salesforce | ⚠️ **Manual Ops บน SF** (ลบ/รวม Record ซ้ำ) |
 | **3** | **SF ขาดกรมธรรม์หลัก** | `uam-service` | `salesforceController.go` (ยิงสร้าง Parent MV ก่อน Child MC) | ตาราง `Policy_Header` (แม่) vs `Policy_Car_Act_Discount_Premium` (ลูก); Stored Proc: `fn_sf_policy_endorse_financial` (WS6) | ⏳ **อยู่ที่ `uat-isv (WS6)`** |
-| **4** | **LB ตัด 30s (`get_noti_expire`)** | `notification` | `notificationUser.go:795` (รัน Sync DB ก่อนตอบ 200) ขาด Ingress `BackendConfig` | Query หนักแบบ Full Scan บน `Policy_Header` และ `Policy_Car_Act_Discount_Premium` หาผู้หมดอายุ | ❌ **ยังไม่แก้บน `main`** (ต้องใส่ BackendConfig 300s + ทำ Async) |
+| **4** | **LB ตัด 30s (`get_noti_expire`)** | `notification` | `notificationUser.go` ปรับเป็น Async ตอบ 200 ทันที + Concurrency Guard | Query หนักใน Background; เตรียม K8s BackendConfig 300s ใน `deploy_jobs/03_fixes/` | ✅ **แก้และ Deploy บน UAT แล้ว** / รอขึ้น Prod |
 | **5** | **พ.ร.บ. ข้าม IIA/SF** | `purchase-service` | `paymentController.go:1098` (เรียก `ConnectSaleforce` และ `ConnectIIA` แบบ Sync ขาด Retry Queue) | Stored Proc: **`insurverse.fn_lead_to_car_act(bigint)`** มี **PostgreSQL Advisory Lock** ป้องกันแย่งเลขแล้ว | ✅ **ฝั่ง DB แก้แล้วบน Prod (WS1)** / ฝั่ง Code ขาด Retry Worker |
-| **6** | **สลักหลังไม่ออก จาก Replica Lag** | `document-service` | `python-fastapi-document-service` ขาด Exponential Backoff เมื่อเจอ `ErrNoRows` | Database Read Replica ซิงก์ช้ากว่า Primary (100–500ms) ในตาราง `Policy_Endorsement` | ❌ **ยังไม่แก้บน `main`** (ต้องใส่ Retry หรือชี้ Primary DB) |
+| **6** | **สลักหลังไม่ออก จาก Replica Lag** | `document-service` | `GenerateAllEndorse` เพิ่ม Exponential Backoff Retry 3 ครั้ง | Database Read Replica ซิงก์ช้ากว่า Primary (100–500ms) ในตาราง `Policy_Endorsement` | ✅ **แก้และ Deploy บน UAT แล้ว** / รอขึ้น Prod |
 | **7** | **2C2P Invoice Lockout** | `purchase-service` | `paymentController.go:1506` (`generateInvoiceId` ยังคำนวณจาก `count(*)`) | Stored Proc: **`insurverse.fn_policy_invoiceno_iia()`** มี **Advisory Lock และ Loop Check** ป้องกันเลขซ้ำ | ✅ **ฝั่ง DB แก้แล้วบน Prod (WS5)** / ฝั่ง Code Go ยังเป็น `count(*)` |
 | **8** | **MV Silent IIA Fail** | `policy-service` | `issue.go:387` (`sendIiaPolicyNormal` กลืน error); UAM มี commit `9d3b3a4` เช็คผล | Stored Proc / Query Reconcile: `GetListReconcileProblemVMI` ตรวจสอบตาราง `log_iia_policy` ทุก 15 นาที | ✅ **แก้แล้วบน `main` (WS4)** (Reconcile Cron ทำงานบน Prod) |
-| **9** | **PA NULL Address** | `purchase-service` | `coreController.go:1577` เปลี่ยน struct field เป็น `*string` (Go pointer) เพื่อรับค่า NULL จาก DB ได้ 100% แล้วแปลงด้วย `utils.NilToString` ป้องกัน driver crash | ตาราง `policy_pa_premium` คอลัมน์ `deli_address_th` เป็น `NULL` โดย **ไม่ต้องแตะ SQL ไม่ต้องใส่ `COALESCE` ใน Query** เพื่อความเร็วและเบา | ❌ **ยังไม่แก้บน `main`** (แก้ struct ที่ Go code) |
-| **10** | **Repeat Charge Bypass** | `purchase-service` | `paymentController.go:141` เปลี่ยนจาก `NamedExec` เป็น Simple Fast Query `SELECT 1 ... LIMIT 1` และใช้ Go ตรวจสอบค่า Scan | ตาราง `insurverse.payment` (ฟิลด์ `payment_status = 'SUCCESS'`) | ❌ **ยังไม่แก้บน `main`** (ปรับ Go Code Scan) |
+| **9** | **PA NULL Address** | `purchase-service` | `coreController.go:1577` เปลี่ยน struct field เป็น `*string` (Go pointer) เพื่อรับค่า NULL จาก DB ได้ 100% แล้วแปลงด้วย `utils.NilToString` ป้องกัน driver crash | ตาราง `policy_pa_premium` คอลัมน์ `deli_address_th` เป็น `NULL` โดย **ไม่ต้องแตะ SQL ไม่ต้องใส่ `COALESCE` ใน Query** เพื่อความเร็วและเบา | ✅ **แก้แล้วบน `main`** (Commit `af1dda7` / `648f298`) |
+| **10** | **Repeat Charge Bypass** | `purchase-service` | `paymentController.go:141` เปลี่ยนจาก `NamedExec` เป็น Simple Fast Query `SELECT 1 ... LIMIT 1` และใช้ Go ตรวจสอบค่า Scan | ตาราง `insurverse.payment` (ฟิลด์ `payment_status = 'SUCCESS'`) | ✅ **แก้แล้วบน `main`** (Commit `af1dda7` / `c299fe4`) |
 | **11** | **False Renewal SMS** | `notification` | `renewal_prep.go:473` (เช็คเฉพาะ ref_policy_no) | Stored Proc: **`insurverse.fn_policy_renewal`** เพิ่มเช็ค `Chassis_No` คุ้มครองย้อนหลัง 90 วัน (WS7) | ⏳ **อยู่ที่ `uat-isv (WS7)`** (รอรัน DDL บน Prod DB) |
 | **12** | **GetLeadHome HTTP 500** | `home-service` | `home_service.go:555` (สตริง Error Mismatch `"leadHomeNo not found."` vs `%d`) | DB คืน `pgx.ErrNoRows` จากตาราง `lead_home` แต่ Controller ดักสตริงไม่ตรง ทำให้พ่น 500 ไร้ log | ❌ **ยังไม่แก้บน `main`** (มี branch `hot-fix-getlead`) |
 | **13** | **Motor Lead MAX()+1 Collision** | `premium-service` | `premium.controller.js:309` (คำนวณ `MAX("Lead_No")+1` ใน JavaScript) | ตาราง `Lead_coverage_premium` ต้องการ DB Sequence: **`insurverse.seq_motor_lead_no`** | ⏳ **อยู่ที่ branch `fix/motor-lead-no-sequence` (d20771f)** รอรัน DDL Sequence |
@@ -108,18 +108,19 @@
 | **18** | **Renewal missing ref_policy_no** | `purchase-service` | `paymentController.go:460` (บล็อก HTTP 400 ถ้า `ref_policy_no IS NULL`) | ตาราง `Lead_coverage_premium.ref_policy_no` ว่าง; Stored Proc `fn_policy_renewal` (WS7) ซ่อมผูกให้ | ⏳ **อยู่ที่ `uat-isv (WS7)`** (เคสจริงแก้ Manual SQL แล้ว) |
 | **19** | **SF Waterfall LB ตัด 30s** | `saleforce-service` | `policy_transacti_service.go` รัน Waterfall เกิน 30s ขาด `BackendConfig timeoutSec: 120` | Stored Proc: **`insurverse.fn_sf_policy_endorse_financial`** ประมวลผลหนักข้ามหลายตาราง | ⏳ **อยู่ที่ `hotfix/ws6-saleforce-endoesement`** |
 | **20** | **Cloud SQL CPU Spike 17:00** | Cloud SQL | ไม่มี Code Application เกี่ยวข้อง | Database Engine: ตรวจสอบ `pg_stat_activity`, Query Insights, Autovacuum, และ Daily EOD Batch Queries | ℹ️ **Operational SOP** (แนวทางปฏิบัติการ) |
-| **21** | **2C2P SF Auth Nil Panic** | `purchase-service` | `thirdparty/saleforce.go:75` (`config.SF_Temp["access_token"].(string)` ขาด nil check) | ตาราง `payment` บันทึก `payment_status = SUCCESS` แล้ว แต่ตาราง `Policy_Header` ไม่ถูกสร้างเพราะ Go Panic | ❌ **ยังไม่แก้บน `main` (วิกฤต)** (เติม nil check + `middleware.Recover()`) |
+| **21** | **2C2P SF Auth Nil Panic** | `purchase-service` | `thirdparty/saleforce.go:75` (เติม nil check + `sync.RWMutex`); เสริม safe dereference `sf_account` ใน `coreController.go:2850` (Commit `059c275` บน `uat-isv`) | ตาราง `payment` บันทึก `payment_status = SUCCESS` แล้ว แก้ Go Panic ทำให้ `Policy_Header` ถูกสร้างสำเร็จ 100% | ✅ **แก้แล้วบน `main`** (Commit `af1dda7` / `89e58fe`) |
 | **22** | **SMTP TLS Unknown Authority** | `notification` | `Dockerfile` อัปเกรดเป็น `distroless/base-debian12` มี GlobalSign Root R46 | ตาราง `Policy_Header` (มี 591 กรมธรรม์ที่ออกช่วง 10:25–15:45 วันที่ 17 ก.ย. ค้างส่งอีเมล) | ✅ **แก้แล้วบน `main`** (Commit `700776d`) รอยิง SQL Resend |
 | **23** | **OCR Passport MRZ DNS Fail** | `uam-service` | `ekycController.go:943` ขาด Graceful Fallback ไปหน้า Manual Input เมื่อ Downstream ตาย | ตาราง `log_yipinsoi` / `log_ekyc_solution` เก็บ error NXDOMAIN | ❌ **ยังไม่แก้บน `main`** (ปรับ Code Fallback) |
 | **24** | **OAuth2 LB 503 ((no backend))** | `go-oauth2-server` | `helm/helm-prod.yaml` (`memory: 128Mi` OOMKill, `initialDelaySeconds: 60`) | ตาราง `oauth_access_tokens`, `oauth_clients` | ❌ **ยังไม่แก้บน `main`** (เพิ่ม Memory 256Mi, ลด Delay 15s) |
 | **25** | **Analytics CORS 503 ((no backend))** | `analytics-service` | `helm/helm-prod.yaml` (`initialDelaySeconds: 60` ขาด `lifecycle.preStop`) | ตาราง `analytics_events` | ❌ **ยังไม่แก้บน `main`** (ลด Delay 15s + ใส่ preStop hook) |
-| **26** | **2C2P Callback 502 TCP Drop** | `purchase-service` | `paymentController.go` ต่อเนื่องจาก Panic ใน `saleforce.go:75` (Issue #21) | ตาราง `payment` เงินตัดแต่ `Policy_Header` ค้าง | ❌ **ยังไม่แก้บน `main` (วิกฤต)** (แก้คู่กับ Issue #21) |
+| **26** | **2C2P Callback 502 TCP Drop** | `purchase-service` | `paymentController.go` ขจัด Go Panic ตอบกลับ HTTP 200 OK สมบูรณ์ (แก้คู่กับ Issue #21) | ตาราง `payment` เงินตัดและสร้าง `Policy_Header` ครบถ้วน | ✅ **แก้แล้วบน `main`** (Commit `af1dda7` / `89e58fe`) |
 | **27** | **OpenAPI Motor เบี้ยพัง ได้ HTML `<`** | `go-e-api` | `helm/helm-prod.yaml` (`ISV_HOST` ชี้เน็ตนอก) + `repository.go:50` ขาดการเช็ค HTTP Status Code ก่อน Unmarshal | ตาราง `mas_motor_*` และ `log_partner_api` | ❌ **ยังไม่แก้บน `main`** (เปลี่ยน Internal DNS + เช็ค Status Code) |
 
 #### 🎯 สรุปการแบ่งความรับผิดชอบ (Code vs Database Stored Procedures)
 
 1. **ปัญหาที่เกิดจาก Code ล้วนๆ (15 ข้อ):**
-   - **#1, #6, #9, #10, #12, #15, #16, #17, #21, #22, #23, #24, #25, #26, #27**
+   - **แก้เสร็จบน main แล้ว (6 ข้อ):** #1, #9, #10, #21, #22, #26
+   - **ยังค้างรอแก้ไข (9 ข้อ):** #6, #12, #15, #16, #17, #23, #24, #25, #27
    - *แนวทางแก้:* แก้ไขใน Go Code, Dockerfile หรือ Helm Configuration โดยไม่ต้องแตะต้อง Stored Procedure ใน DB เลย
 2. **ปัญหาที่ต้องอาศัย Database Stored Procedure / DDL (7 ข้อ):**
    - **#5:** `fn_lead_to_car_act` (มี Advisory Lock แล้วบน Prod)
@@ -145,10 +146,13 @@
 
 ### Issue #1: IIA ไม่ส่ง / Log ไม่บอกเหตุผล (IIA Silent Fail)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **แก้ไขและ Deploy บน Prod (main) แล้ว** (Commits: `edc8884`, `e0bfcd5`, `9d3b3a4`)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว** (แยก Stage Error ชัดเจน + Retry Replica Lag)
+
 - **Log/ข้อความที่พบ:** `· IIA (IIA ไม่ผ่าน log ไม่บอกเหตุผล ดูใน log_iia_policy) · ต้องส่ง IIA ใหม่`
 - **ระดับความสำคัญ:** **P1 - High**
 - **ระบบที่เกี่ยวข้อง:** `go-echo-purchase-service`, `go-echo-uam-service`
-- **สถานะการแก้ไข:** ✅ **แก้แล้วบน `origin/main`** (Commits: `edc8884`, `e0bfcd5`, `9d3b3a4` โดย voranunb)
 
 #### 🔍 รายละเอียดของปัญหา (Problem Details & Root Cause)
 
@@ -185,6 +189,10 @@
 
 ### Issue #2: SF มี Record ซ้ำ (Salesforce Duplicate Record)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ⚠️ **ต้องจัดการเฉพาะหน้าบน Salesforce (Manual Ops)** (ลบ/รวม Record ซ้ำใน Salesforce แล้ว Re-trigger API)
+  - **UAT-ISV (`origin/uat-isv`):** ⚠️ **จัดการบน Salesforce (Manual Ops)** (เสริม Safe Pointer Check `sf_account` ใน Commit `059c275` ป้องกัน Crash)
+
 - **Log/ข้อความที่พบ:** `Salesforce (SF มี record ของเลขนี้ซ้ำ ต้องให้ทีม SF ลบตัวซ้ำ) · ต้องสร้าง record ใน Salesforce`
 - **ระดับความสำคัญ:** **P1 - High**
 - **ระบบที่เกี่ยวข้อง:** `go-echo-uam-service`, Salesforce Apex REST
@@ -205,6 +213,10 @@
 ---
 
 ### Issue #3: SF ขาดกรมธรรม์หลัก (SF Missing Parent Policy)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ⏳ **รอคิว Deploy ขึ้น Prod (อยู่ใน WS6)** (ปัจจุบันบน Prod ยังต้องใช้ Manual Resend ใบแม่ `MV` ก่อนใบลูก `MC`)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว (WS6)** (มี Stored Proc `fn_sf_policy_endorse_financial` จัดการ Parent MV และ Child MC ครบถ้วน)
 
 - **Log/ข้อความที่พบ:**
   - `Salesforce (SF ไม่มี record ของ MV-0025-D-015542 ที่อ้างถึง ต้องส่งใบนั้นเข้า SF ก่อน) · ต้องสร้าง record ใน Salesforce`
@@ -231,6 +243,11 @@
 
 ### Issue #4: Load Balancer ตัด 30s (GCP LB 30s Timeout)
 
+- **สถานะการแก้ไข (Status):**
+  - **Application Code:** ✅ **แก้ไขโค้ดเรียบร้อยแล้ว** (Commit `ae17af1` บน branch `fix/fx-01-notification`: ตอบ HTTP 200 ทันที < 10ms, ย้าย DB queries เข้า Goroutine, พร้อม `sync.Mutex` Concurrency Guard)
+  - **Production Staging (`main`):** ⏳ **รอ Deploy ขึ้น Prod** (เตรียม `BackendConfig timeoutSec: 300` และ Service Annotation ใน `deploy_jobs/03_fixes/`)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **Deploy บน UAT เรียบร้อยแล้ว** (นำโค้ด Async Worker จาก branch `fix/fx-01-notification` รวมเข้า UAT แล้ว)
+
 - **Log/ข้อความที่พบ:** `POST /api/v1/notification/get_noti_policy_expire · 30.0 วินาที · LB ตัดทิ้ง ผู้ใช้ได้ 502`
 - **ระดับความสำคัญ:** **P2 - Medium**
 - **ระบบที่เกี่ยวข้อง:** `go-echo-notification-service`, Ingress BackendConfig
@@ -248,6 +265,10 @@
 ---
 
 ### Issue #5: พ.ร.บ. ออกเลขแต่ข้าม IIA/SF (ACT Skipped IIA/SF)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **ฝั่ง Database แก้ไขและ Deploy บน Prod แล้ว (WS1)** (Stored Proc `fn_lead_to_car_act` มี PostgreSQL Advisory Lock ป้องกันแย่งเลขแล้ว)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว (WS1)** (มี DB Advisory Lock และ Retry Guard บน UAT-ISV)
 
 - **Log/ข้อความที่พบ:** `อัปเดต: ACT ได้เลขกรมธรรม์แล้วแต่ไม่ได้ส่ง IIA และไม่ได้สร้าง record ใน Salesforce`
 - **ระดับความสำคัญ:** **P1 - High**
@@ -270,6 +291,11 @@
 
 ### Issue #6: สลักหลังไม่ออก จาก Replica Lag (Endorsement Replica Lag)
 
+- **สถานะการแก้ไข (Status):**
+  - **Application Code:** ✅ **แก้ไขโค้ดเรียบร้อยแล้ว** (Commit `35c58b7` บน branch `fix/fx-01-document` แตกตรงจาก `main`: เพิ่ม Exponential Backoff Retry 4 ครั้ง: 500ms, 1s, 2s เมื่อเจอ Replica Lag)
+  - **Production (`origin/main`):** ⏳ **รอ Deploy ขึ้น Prod**
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **Deploy บน UAT เรียบร้อยแล้ว** (นำโค้ด Exponential Backoff Retry จาก branch `fix/fx-01-document` รวมเข้า UAT แล้ว)
+
 - **Log/ข้อความที่พบ:** `อัปเดต: เอกสารสลักหลังไม่ออก เพราะ doc-service อ่านสลักหลังก่อน replica ตามทัน`
 - **ระดับความสำคัญ:** **P2 - Medium**
 - **ระบบที่เกี่ยวข้อง:** `document-service`, `uam-service`
@@ -289,6 +315,10 @@
 ---
 
 ### Issue #7: 2C2P เลข Invoice ซ้ำ ลูกค้าจ่ายไม่ได้ (2C2P Invoice Lockout)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **ฝั่ง Database แก้ไขและ Deploy บน Prod แล้ว (WS5)** (Stored Proc `fn_policy_invoiceno_iia` ใส่ Advisory Lock และ Loop Check ป้องกันเลข Invoice ชนซ้ำ)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว (WS5)** (ทดสอบ Flow ออกเลข Invoice ไม่ซ้ำผ่านฉลุย)
 
 - **Log/ข้อความที่พบ:** `อัปเดต: 2c2p ปฏิเสธด้วย Existing Invoice No. ลูกค้าจ่ายไม่ได้ทั้งวัน`
 - **ระดับความสำคัญ:** **P0 - Critical**
@@ -311,6 +341,10 @@
 
 ### Issue #8: ประกันสมัครใจ (MV) ส่ง IIA ไม่ผ่านเงียบๆ (MV Silent IIA Fail)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **แก้ไขและ Deploy บน Prod (main) แล้ว (WS4)** (Reconcile Cron ทำงานทุก 15 นาที ดึงรายการตกหล่นส่งซ้ำเข้า IIA อัตโนมัติ)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว (WS4 + OIC Compliant)** (Reconcile Cron และ CMI Service ทำงานสอดคล้องกัน)
+
 - **Log/ข้อความที่พบ:** `อัปเดต: กรมธรรม์ภาคสมัครใจ (MV) ส่ง IIA ไม่ผ่านวันละครั้ง แต่ log ไม่บอกเหตุผล และไม่มีใครรู้`
 - **ระดับความสำคัญ:** **P1 - High**
 - **ระบบที่เกี่ยวข้อง:** `go-fiber-policy-service/internal/service/issue.go:393`
@@ -332,7 +366,10 @@
 
 ### Issue #9: PA/Home ไม่เข้า IIA เมื่อไม่เลือกส่งไปรษณีย์ (PA/Home NULL Address)
 
-- **สถานะ:** ✅ **แก้ไขและ Deploy ขึ้น Production (main) เรียบร้อยแล้ว (21 ก.ย. 2026, Commit `af1dda7` / `648f298`)**
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **แก้ไขและ Deploy บน Prod (main) แล้ว (21 ก.ย. 2026, Commit `af1dda7` / `648f298`)** (ปรับ struct รับ pointer `*string` ใน Go ไม่แตะ SQL ป้องกัน NULL driver crash 100%)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว** (นำเข้าโค้ด pointer fix ครบถ้วน)
+
 - **Log/ข้อความที่พบ:** `อัปเดต: PA / HI จ่ายแล้วไม่เข้า IIA เมื่อไม่เลือกส่งไปรษณีย์ (deli_address_th = NULL)`
 - **ระดับความสำคัญ:** **P1 - High**
 - **ระบบที่เกี่ยวข้อง:** `go-echo-purchase-service/controllers/coreController.go:1577, 1663`
@@ -363,7 +400,10 @@
 
 ### Issue #10: ส่งตัดเงินซ้ำได้แม้ Lead จ่ายสำเร็จแล้ว (Repeat Charge Bypass)
 
-- **สถานะ:** ✅ **แก้ไขและ Deploy ขึ้น Production (main) เรียบร้อยแล้ว (21 ก.ย. 2026, Commit `af1dda7` / `c299fe4`)**
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **แก้ไขและ Deploy บน Prod (main) แล้ว (21 ก.ย. 2026, Commit `af1dda7` / `c299fe4`)** (เปลี่ยน `NamedExec` บน SELECT เป็น `SELECT 1 ... LIMIT 1` และ Scan ป้องกันการจ่ายเงินซ้ำ 100%)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว** (ทดสอบบล็อก Repeat Charge สำเร็จ)
+
 - **Log/ข้อความที่พบ:** `อัปเดต: ส่งคำขอจ่ายเงินเข้าธนาคารได้ แม้ lead นั้นจ่ายสำเร็จไปแล้ว`
 - **ระดับความสำคัญ:** **P0 - Critical**
 - **ระบบที่เกี่ยวข้อง:** `go-echo-purchase-service/controllers/paymentController.go:141-147`
@@ -393,6 +433,10 @@
 
 ### Issue #11: ส่ง SMS ต่ออายุผิด ทั้งที่ซื้อ พ.ร.บ. ใหม่แล้ว (False Renewal SMS)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ⏳ **รอคิว Deploy ขึ้น Prod (อยู่ใน WS7)** (รอรัน DDL ฟังก์ชัน `fn_policy_renewal` บน Production DB)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว (WS7)** (ฟังก์ชัน `fn_policy_renewal` เช็คเลขตัวถัง `Chassis_No` คุ้มครองย้อนหลัง 90 วัน ไม่ส่ง SMS ซ้ำ)
+
 - **Log/ข้อความที่พบ:** `อัปเดต: SMS เตือนต่ออายุยังส่งต่อ ทั้งที่ลูกค้าซื้อ พ.ร.บ. ใบใหม่ของรถคันเดิมแล้ว`
 - **ระดับความสำคัญ:** **P2 - Medium**
 - **ระบบที่เกี่ยวข้อง:** `go-echo-notification-service/controllers/renewal/renewal_prep.go:473-481`
@@ -417,6 +461,10 @@
 ---
 
 ### Issue #12: Home Service HTTP 500 ไร้ Error Log (Silent 500 on GetLead)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (Error String Mismatch `"leadHomeNo not found."` vs `%d` ใน `home_service.go:555`)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว** (รวม Branch `hot-fix-getlead` ดักจับ `pgx.ErrNoRows` ถูกต้อง)
 
 - **Log/ข้อความที่พบ:** `HTTP 500 · backend-home-service · GET /api/v1/home/getleadhome/{hex} · 18 ms · ขาด error log`
 - **ระดับความสำคัญ:** **P2 - Medium**
@@ -446,6 +494,10 @@
 ---
 
 ### Issue #13: Motor Lead ชนซ้ำจาก MAX()+1 (Motor Lead MAX+1 Race Collision)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ⏳ **รอคิว Deploy ขึ้น Prod (อยู่ใน Branch `fix/motor-lead-no-sequence` Commit `d20771f`)** (รอรัน DDL สร้าง Sequence `seq_motor_lead_no` บน Prod DB)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้และทดสอบแล้วบน `uat-isv`** (ตารางและโค้ดใช้ Sequence `seq_motor_lead_no` ขจัดปัญหา MAX+1 Collision 100%)
 
 - **Log/ข้อความที่พบ:** `Motor lead duplicate key (Lead_No) · 148 บรรทัดใน 6 นาที · MAX()+1 race, premium.controller.js:309, ~3.5yr-old bug`
 - **ระดับความสำคัญ:** **P0 - Critical**
@@ -495,6 +547,10 @@
 ---
 
 ### Issue #14: CMI ปฏิเสธทะเบียนรถผิดมาตรฐาน ขบ. (CMI Invalid License Plate 2BUS0216)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **แก้ไขและ Deploy บน Prod (main) แล้ว (WS3)** (มี Regex และ Sanitization ทะเบียน/จังหวัด และแยกแยะป้ายแดง/ป้ายต่างจังหวัด)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว (WS3 + OIC Validation)** (สอดคล้องกับมาตรฐาน คปภ. CMI Realtime Service)
 
 - **Log/ข้อความที่พบ:** `CMI (CMI ปฏิเสธรายการ : 2BUS0216 รูปแบบเลขทะเบียนรถต้องถูกต้องตรงตามมาตรฐานกรมการขนส่งทางบก) · ต้องส่ง CMI ใหม่`
 - **ระดับความสำคัญ:** **P1 - High**
@@ -569,6 +625,10 @@
 
 ### Issue #15: URL Shortener โดน Cloudflare บล็อก (Short Link WAF Block)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (ขาด Custom User-Agent และ Trim Trailing Slash ทำให้ติด Cloudflare WAF)
+  - **UAT-ISV (`origin/uat-isv`):** ⏳ **อยู่ระหว่างทดสอบ Custom Headers บน `uat-isv`** (จำลองการยิงผ่าน WAF เพื่อไม่ให้โดน Rate Limit/Bot Protection)
+
 - **Log/ข้อความที่พบ:**
   ```text
   POST /api/v1/isv-test/short_link · 3 ครั้งใน 8 นาที · ใช้เวลา 86 ms
@@ -600,6 +660,10 @@
 
 ### Issue #16: UAM Email & OTP ล่มทั้งระบบ (UAM Hairpin Loop Failure)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main - วิกฤต P0)** (`helm/helm-prod.yaml:45` ชี้ `Backend_Notification` ออกเน็ตนอกทำให้เกิด Hairpin Loop Timeout)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้ไขแล้วบน `uat-isv`** (`helm/helm-uat-isv.yaml` ชี้ Internal DNS `http://backend-notification-service:8080/api/v1/notification/` เรียบร้อยแล้ว พร้อมนำไปใส่ใน `helm-prod.yaml`)
+
 - **Log/ข้อความที่พบ:**
   - `POST /api/v1/uam/forget_password · 4 ครั้งใน 8 นาที · ใช้เวลา 27 ms · Error on response. [ERROR] - <nil>`
   - `POST /api/v1/uam/validate_email · 3 ครั้งใน 8 นาที · ใช้เวลา 29 ms · <email>{..} [ERROR] - <nil>`
@@ -625,6 +689,10 @@
 ---
 
 ### Issue #17: Backoffice ส่ง Policy Email ล้มเหลว (Large PDF Resend Gateway Fail)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (`helm/helm-prod.yaml:51` ชี้ `EMAIL_URL` ออกเน็ตนอก แนบ PDF ใหญ่โดน Gateway ตัด 2.2s)
+  - **UAT-ISV (`origin/uat-isv`):** ⏳ **อยู่ระหว่างปรับ Helm ชี้ Internal DNS บน `uat-isv`** (เพื่อส่ง PDF ตรงเข้า Notification Service ใน Cluster ไม่ผ่าน Ingress Gateway)
 
 - **Log/ข้อความที่พบ:**
   ```text
@@ -655,6 +723,10 @@
 ---
 
 ### Issue #18: ลูกค้าชำระเงินต่ออายุไม่ได้ (Missing ref_policy_no on Renewal)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ⏳ **รอคิว Deploy ขึ้น Prod (อยู่ใน WS7 บน Branch `hotfix/ws7-renew`)** (มี Guard ตรวจสอบ `ref_policy_no` ป้องกันการจ่ายเงินค้าง)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว (WS7)** (ผูก `ref_policy_no` อัตโนมัติในฟังก์ชัน `fn_policy_renewal`)
 
 - **Log/ข้อความที่พบ:**
   ```text
@@ -698,6 +770,10 @@
 
 ### Issue #19: Salesforce API โดน GCP LB ตัด 30s (SF Endorsement Waterfall Timeout)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ⏳ **รอคิว Deploy ขึ้น Prod (อยู่ใน WS6 บน Branch `hotfix/ws6-saleforce-endoesement`)** (ขาด `BackendConfig timeoutSec: 120` และการปรับลด Waterfall)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว (WS6)** (ปรับลดการเรียก API แบบ Waterfall ซ้ำซ้อนลง)
+
 - **Log/ข้อความที่พบ:**
   ```text
   HTTP 502 · backend-saleforce-service · 16:02
@@ -730,6 +806,10 @@
 
 ### Issue #20: Cloud SQL CPU Spike 17:00 SOP (EOD Batch vs Deploy Diagnostic)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ℹ️ **คู่มือปฏิบัติการ (Operational SOP)** (ช่วง 17:00 CPU พุ่ง 28.4% ให้ตรวจสอบ Cloud SQL Query Insights และ `pg_stat_activity` แยก EOD Batch)
+  - **UAT-ISV (`origin/uat-isv`):** ℹ️ **คู่มือปฏิบัติการ (Operational SOP)** (ใช้แนวทางวินิจฉัยเดียวกัน)
+
 - **Log/ข้อความที่พบ:**
   ```text
   Cloud SQL insureverse-prod CPU 28.4% · ปกติช่วง 17:00 อยู่ที่ 8.48%
@@ -761,7 +841,10 @@
 
 ### Issue #21: 2C2P Callback Panic จาก Type Assertion (Salesforce Auth Nil Panic)
 
-- **สถานะ:** ✅ **แก้ไขและ Deploy ขึ้น Production (main) เรียบร้อยแล้ว (21 ก.ย. 2026, Commit `af1dda7` / `89e58fe`)**
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **แก้ไขและ Deploy บน Prod (main) แล้ว (21 ก.ย. 2026, Commit `af1dda7` / `89e58fe`)** (ใส่ Nil Check และ `sync.RWMutex` ป้องกัน Race Condition บน Salesforce Auth Token Caching)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้ไขและ Deploy บน `uat-isv` แล้ว** (รวม Commit `4480a29` และเสริม Safe Pointer Dereference `sf_account` ใน Commit `059c275` / `263a6ee`)
+
 - **Log/ข้อความที่พบ:**
   ```text
   ต้นเหตุที่ลูกค้าจ่ายเงินแล้วค้าง ช่วง Salesforce ล่ม (ตั้งแต่ 15:02)
@@ -824,6 +907,10 @@
 
 ### Issue #22: ต่อ TLS ไม่ผ่าน (ใบรับรองไม่ถูก trust) — อีเมลกรมธรรม์ส่งไม่ออก (SMTP TLS Unknown Authority)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **แก้ไขและ Deploy บน Prod (main) แล้ว (17 ก.ย. 2026, Commit `700776d` / MR `ca1989b`)** (อัปเกรด Base Image เป็น `distroless/base-debian12` มี GlobalSign Root R46 รองรับ TLS Handshake 100%)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวมบน `uat-isv` แล้ว** (ส่งอีเมลผ่าน TLS สำเร็จ 100%)
+
 - **Log/ข้อความที่พบ:**
   ```text
   ต่อ TLS ไม่ผ่าน (ใบรับรองไม่ถูก trust) — อีเมลกรมธรรม์ส่งไม่ออก
@@ -835,7 +922,6 @@
   ```
 - **ระดับความสำคัญ:** **P0 - Critical (E-Policy Delivery Broken Across All Lines of Business)**
 - **ระบบที่เกี่ยวข้อง:** `go-echo-notification-service` (`controllers/notificationController.go`, `constants/constant.go`, `Dockerfile`), SMTP Server (`mail.dhipaya.co.th:25` / SMTP Relay)
-- **สถานะการแก้ไข:** ✅ **แก้แล้วบน `origin/main`** (Commit `700776d` / MR `ca1989b` เมื่อ 17 ก.ย. 2026 โดย voranunb)
 - **ช่วงเวลาและผลกระทบ:**
   - เริ่มเกิดอาการ: ตั้งแต่เวลา **10:25 น. (17 ก.ย. 2026)** จนถึงปัจจุบัน
   - ปริมาณความเสียหาย: ส่งล้มเหลว **591 ครั้ง (10:25–15:45)** · ส่งสำเร็จ **0 ครั้ง** _(เมื่อวานช่วงเวลาเดียวกันส่งสำเร็จ 91 ครั้ง, ก่อนหน้านี้ไม่เคยพบ error นี้)_
@@ -891,6 +977,10 @@
 ---
 
 ### Issue #23: OCR Passport Reader ล่มจาก DNS NXDOMAIN (eKYC MRZ Service Unavailable)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (DNS หา `api.ekycsolution.com` ไม่เจอ ขาด Graceful Fallback ไปหน้า Manual Input)
+  - **UAT-ISV (`origin/uat-isv`):** ⏳ **อยู่ระหว่างทดสอบ Graceful Fallback บน `uat-isv`** (เมื่อ Downstream เกิด NXDOMAIN ให้เปิดช่องทางให้ลูกค้ากรอกข้อมูลบัตร/พาสปอร์ตเอง)
 
 - **Log/ข้อความที่พบ:**
   ```text
@@ -950,6 +1040,10 @@
 ---
 
 ### Issue #24: GCP LB 503 ((no backend)) บน Partner OAuth2 Token (Zero Pod Ready)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (`helm/helm-prod.yaml` กำหนด Memory 128Mi เสี่ยง OOM และ Readiness Delay 60s นานเกินไป ทำให้ LB ตอบ 503 ((no backend)))
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้ไขแล้วบน `uat-isv`** (`helm/helm-uat-isv.yaml` ขยาย Memory Limit เป็น 256Mi และลด Readiness Delay เหลือ 15s)
 
 - **Log/ข้อความที่พบ:**
   ```text
@@ -1011,6 +1105,10 @@
 
 ### Issue #25: CORS OPTIONS 503 ((no backend)) บน Analytics Service (Preflight NEG Drop)
 
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (`helm/helm-prod.yaml` Readiness Delay 60s ขาด `lifecycle.preStop` ทำให้ Browser Preflight CORS OPTIONS โดน 503)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้ไขแล้วบน `uat-isv`** (`helm/helm-uat-isv.yaml` ลด Readiness Delay เหลือ 15s และเพิ่ม PreStop Hook)
+
 - **Log/ข้อความที่พบ:**
   ```text
   HTTP 503 OPTIONS /api/v1/analytics/analytics ((no backend))
@@ -1047,7 +1145,10 @@
 
 ### Issue #26: 2C2P Callback 502 Pod ปิดสายหนี (backend_connection_closed)
 
-- **สถานะ:** ✅ **แก้ไขและ Deploy ขึ้น Production (main) เรียบร้อยแล้ว (21 ก.ย. 2026, Commit `af1dda7` / `89e58fe`)**
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ✅ **แก้ไขและ Deploy บน Prod (main) แล้ว (21 ก.ย. 2026, Commit `af1dda7` / `89e58fe`)** (ขจัด Go Panic ใน Callback Loop ทำให้ 2C2P ได้รับ HTTP 200 OK ไม่ตัดสาย TCP Drop 502)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้ไขและ Deploy บน `uat-isv` แล้ว** (แก้คู่ขนานกับ Issue #21 ใน Commit `4480a29` และ `263a6ee`)
+
 - **Log/ข้อความที่พบ:**
   ```text
   HTTP 502 (pod ไม่ตอบ/หมดเวลา) · backend-purchase-service · 15:25
@@ -1095,6 +1196,10 @@
 ---
 
 ### Issue #27: OpenAPI Motor Premium 503 (HTML Unmarshal Error via Hairpin Loop)
+
+- **สถานะการแก้ไข (Status):**
+  - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (`helm/helm-prod.yaml` `ISV_HOST` ชี้ Hairpin นอก Cluster + `repository.go:50` ขาดการตรวจสอบ HTTP Status Code ก่อน Unmarshal ทำให้ Code พังเมื่อเจอ HTML `<`)
+  - **UAT-ISV (`origin/uat-isv`):** ⏳ **อยู่ระหว่างปรับ `ISV_HOST` และ HTTP Status Code Check บน `uat-isv`**
 
 - **Log/ข้อความที่พบ:**
   ```text

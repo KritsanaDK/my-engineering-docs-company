@@ -1,0 +1,8 @@
+# Helm Values Patch: go-e-api (OpenAPI Motor) (Production)
+# ปัญหาที่แก้ไข: Issue #27 - OpenAPI Motor Premium 503 (HTML Parse Error via Hairpin Loop)
+# คำสั่งใช้งาน: helm upgrade openapi-motor-service ./helm --reuse-values -f patch_go_e_api_prod.yaml -n default
+# หมายเหตุ: ห้ามแก้ไข helm-prod.yaml ใน repo โดยตรง
+
+extraEnv:
+  - name: ISV_HOST
+    value: "http://backend-core-service:8080"

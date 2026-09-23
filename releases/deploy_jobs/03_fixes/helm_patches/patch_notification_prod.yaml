@@ -1,0 +1,9 @@
+# Helm Values Patch: go-echo-notification-service (Production)
+# ปัญหาที่แก้ไข: Issue #4 - Load Balancer ตัด 30s บน Notification Service
+# คำสั่งใช้งาน: helm upgrade backend-notification-service ./helm --reuse-values -f patch_notification_prod.yaml -n default
+# หมายเหตุ: ห้ามแก้ไข helm-prod.yaml ใน repo โดยตรง
+
+service:
+  annotations:
+    cloud.google.com/backend-config: '{"default": "backend-notification-config"}'
+    cloud.google.com/neg: '{"ingress": true}'

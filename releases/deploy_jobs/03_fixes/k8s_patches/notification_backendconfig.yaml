@@ -1,0 +1,24 @@
+# Kubernetes BackendConfig: Notification Service (Issue #4)
+# ปัญหาที่แก้ไข: Issue #4 - Load Balancer ตัด 30s บน Notification Service
+# คำสั่งใช้งาน: kubectl apply -f notification_backendconfig.yaml -n default
+
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: backend-notification-config
+  namespace: default
+  labels:
+    app: backend-notification-service
+    issue: "issue-4"
+spec:
+  timeoutSec: 300
+  connectionDraining:
+    drainingTimeoutSec: 60
+  healthCheck:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    type: HTTP
+    requestPath: /healthcheck
+    port: 8080

@@ -1,0 +1,8 @@
+# Helm Values Patch: go-echo-lead-policy-service (Production)
+# ปัญหาที่แก้ไข: Issue #17 - Backoffice Policy Email Gateway Fail (Large PDF Resend)
+# คำสั่งใช้งาน: helm upgrade backend-lead-policy-service ./helm --reuse-values -f patch_lead_policy_prod.yaml -n default
+# หมายเหตุ: ห้ามแก้ไข helm-prod.yaml ใน repo โดยตรง
+
+extraEnv:
+  - name: EMAIL_URL
+    value: http://backend-notification-service:8080/api/v1/notification/email

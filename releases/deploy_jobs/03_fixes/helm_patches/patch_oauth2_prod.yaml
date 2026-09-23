@@ -1,0 +1,24 @@
+# Helm Values Patch: go-oauth2-server (Production)
+# ปัญหาที่แก้ไข: Issue #24 - GCP LB 503 ((no backend)) บน Partner OAuth2 Token (Zero Pod Ready)
+# คำสั่งใช้งาน: helm upgrade openapi-oauth-service ./helm --reuse-values -f patch_oauth2_prod.yaml -n default
+# หมายเหตุ: ห้ามแก้ไข helm-prod.yaml ใน repo โดยตรง
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+livenessProbe:
+  initialDelaySeconds: 15
+  timeoutSeconds: 3
+  periodSeconds: 8
+  failureThreshold: 5
+
+readinessProbe:
+  initialDelaySeconds: 15
+  timeoutSeconds: 3
+  periodSeconds: 8
+  failureThreshold: 5
