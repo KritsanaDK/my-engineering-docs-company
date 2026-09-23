@@ -50,8 +50,13 @@
   2. Always verify parameter signatures, data type mappings (e.g. nullable columns to pointer types `*string`), advisory locks, transaction isolation, and return contracts between the application caller and the DB callee before implementing changes.
   3. Ensure that any modification to application code preserves constraints expected by DB functions, and any modification to DB functions maintains full compatibility with all calling services.
 
-## 📌 Rule 10: Mandatory Local-Only Git Operations & No Tracking from Main (ห้าม Git Push และต้องใช้ --no-track เสมอ)
-- **Never Auto-Push to Remote (ห้ามรัน git push บน Codebase ทุกกรณี)**: The AI agent MUST NEVER execute `git push` to any project codebase or microservice repository (GitLab / GitHub) under any circumstances, unless explicitly and directly commanded by the user with the word "push". All development, bug fixing, branch creation, testing, and commits MUST remain 100% strictly on the local machine to prevent CI/CD pipelines, automated webhooks, or auto-merging from firing prematurely into `main`.
+## 📌 Rule 10: Push Feature Branches Only — Never Auto-Merge into Main & No Tracking from Main (Push ได้ แต่ห้าม Auto Merge เข้า main และต้องใช้ --no-track เสมอ)
+- **Push Allowed to Feature Branches (Push ได้เฉพาะ Branch งานของตัวเอง)**: The AI agent MAY `git push` to a project codebase or microservice repository (GitLab / GitHub), but ONLY to its own feature/fix branch with an explicit refspec (e.g. `git push origin fix/fx-01-short-link`). Before pushing, verify the target branch is NOT `main`.
+- **Never Merge or Auto-Merge into Main (ห้าม Merge / Auto Merge เข้า main ทุกกรณี)**: The AI agent MUST NEVER:
+  1. Push directly to `main` (e.g. `git push origin main`, `git push origin HEAD:main`).
+  2. Run `git merge` / `git rebase` onto local `main` followed by a push, or force-push (`--force`, `--force-with-lease`) to any shared branch.
+  3. Enable auto-merge on any MR/PR targeting `main` (e.g. `-o merge_request.merge_when_pipeline_succeeds`, `-o merge_request.target=main` combined with auto-merge, `glab mr merge`, `gh pr merge --auto`, "Merge when pipeline succeeds").
+  - Merging into `main` is done **only by a human** via GitLab/GitHub MR review.
 - **Mandatory `--no-track` When Branching (ต้องใส่ --no-track เสมอเมื่อแตก Branch จาก main)**: Whenever creating a new branch from `main` or any remote branch, the AI agent MUST strictly use the `--no-track` flag (e.g. `git checkout --no-track -b <branch_name> origin/main`). The AI agent MUST NEVER allow Git to automatically attach upstream tracking (`branch.<name>.merge = refs/heads/main`), preventing accidental pushes or auto-merge routing into production `main`.
 - **Verify Clean Local Branch (ตรวจสอบสถานะ Branch บริสุทธิ์เสมอ)**: After creating a branch, always verify with `git branch -vv` that the newly created branch has NO upstream tracking bracket (`[origin/...]`) pointing to `main`.
 
