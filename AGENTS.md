@@ -43,6 +43,8 @@
      - **`my-keystores`** (`~/.keystores`)
   3. Verify all 3 repositories report `working tree clean` and provide updated commit summaries.
   4. Run `~/.gemini/config/scripts/sync_ai_config.sh` so every AI tool (Antigravity/Gemini, Claude Code, Codex, Cursor) points at the same AGENTS.md and the same skills (on a new machine: after cloning `my-antigravity-skills`).
+- **Skills Live Only Here (Skill อยู่ได้แค่ในเครื่องนี้และ repo เท่านั้น)**: Custom skills exist ONLY in the `my-antigravity-skills` repo and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
+- **Using Skills From Any AI (ใช้ Skill ได้ทุกค่าย)**: If your tool has no native skill support, read `~/.gemini/config/SKILLS_INDEX.md` before starting a task and open the matching `SKILL.md` when a skill applies.
 - **Never Upload Skills or Rules to External Services (ห้ามอัปโหลด Skill/กฎไปยังบริการภายนอก)**: The AI agent MUST NEVER upload, import, or suggest uploading custom skills, AGENTS.md, or memory to any external service (e.g. claude.ai account Skills, cloud skill marketplaces, shared gists). They contain internal hosts, keys, and DB procedures. The ONLY sanctioned way to carry them to another machine is `git clone` of `my-antigravity-skills` + `scripts/sync_ai_config.sh`.
 
 ## 📌 Rule 9: Mandatory Dual-Inspection: Code + DB Stored Procedures (ต้องตรวจสอบ Code และ DB Stored Procedure ควบคู่กันเสมอ)
@@ -73,3 +75,11 @@
   - `database/schema_spec/functions_and_triggers.md` when a stored function changes (after the Rule 3 backup)
 - **Mention It in the MR**: State in the MR description which spec files were updated. For a pure refactor with no contract change, say explicitly that no spec update is needed.
 - **Never Write Secrets Into Docs**: Record environment variable NAMES only, never secret values.
+
+## 📌 Rule 12: Environment Scope & Safety (ใช้ได้เฉพาะ UAT-ISV — ห้ามแตะ UAT / Production)
+- **UAT-ISV Only**: The ONLY environment the AI agent may act on (deploy/merge target, DB access, API tests) is **UAT-ISV**. See the `uat-isv-infra-devops` skill for DB connection details.
+- **Never Touch Production**: No Prod DB access, deploys, or config changes. Production packs (Rule 5) are prepared for humans to run.
+- **Never Touch UAT**: No merge, push, deploy, DB access, or branch cleanup on the `uat` environment / `uat` branch / `*-uat` branches, unless the user gives a new explicit instruction. Reading git history that mentions `uat` for context is fine.
+- **`main` Is Git Base Only**: Branch from `origin/main` and target MRs at it (Rule 10); merging is done by a human.
+- **E2E Payments via Real Sandbox Links**: For tests needing a payment, create the payment via the API and send the user the 2C2P **sandbox** `webPaymentUrl` to pay with the 2C2P test card; watch `insurverse.payment` / `payment_callback` for the real callback. The AI MUST NOT sign or fake payment callbacks itself, nor read the K8s `2c2p` secret.
+- **nextjs-backoffice-webapp — No CI Trigger**: Never trigger a GitLab CI pipeline (no `git push` to `uat-isv` or other branches) for this repo; its CI can deploy to Cloudflare unintentionally. Deploy to Cloud Run only via the local `deploy.sh`. Keep changes local unless the user explicitly asks to push, and warn about CI first.
