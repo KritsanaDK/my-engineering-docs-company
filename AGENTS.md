@@ -43,6 +43,7 @@
      - **`my-keystores`** (`~/.keystores`)
   3. Verify all 3 repositories report `working tree clean` and provide updated commit summaries.
   4. Run `~/.gemini/config/scripts/sync_ai_config.sh` so every AI tool (Antigravity/Gemini, Claude Code, Codex, Cursor) points at the same AGENTS.md and the same skills (on a new machine: after cloning `my-antigravity-skills`).
+- **Never Upload Skills or Rules to External Services (ห้ามอัปโหลด Skill/กฎไปยังบริการภายนอก)**: The AI agent MUST NEVER upload, import, or suggest uploading custom skills, AGENTS.md, or memory to any external service (e.g. claude.ai account Skills, cloud skill marketplaces, shared gists). They contain internal hosts, keys, and DB procedures. The ONLY sanctioned way to carry them to another machine is `git clone` of `my-antigravity-skills` + `scripts/sync_ai_config.sh`.
 
 ## 📌 Rule 9: Mandatory Dual-Inspection: Code + DB Stored Procedures (ต้องตรวจสอบ Code และ DB Stored Procedure ควบคู่กันเสมอ)
 - **Always Verify Both Application Code & Database Stored Objects**: For every bug fix, enhancement, policy issuance workflow, payment processing, or concurrency handling, the AI agent MUST strictly cross-examine BOTH the application source code (Go/Node.js/Python) and the underlying Database Stored Procedures/Functions/Triggers (e.g. `fn_lead_to_car_act`, `fn_policy_invoiceno_iia`, `fn_policy_renewal`, etc.) in parallel to prevent desynchronization and reduce errors.
