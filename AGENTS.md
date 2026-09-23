@@ -51,12 +51,15 @@
   3. Ensure that any modification to application code preserves constraints expected by DB functions, and any modification to DB functions maintains full compatibility with all calling services.
 
 ## 📌 Rule 10: Push Feature Branches Only — Never Auto-Merge into Main & No Tracking from Main (Push ได้ แต่ห้าม Auto Merge เข้า main และต้องใช้ --no-track เสมอ)
-- **Push Allowed to Feature Branches (Push ได้เฉพาะ Branch งานของตัวเอง)**: The AI agent MAY `git push` to a project codebase or microservice repository (GitLab / GitHub), but ONLY to its own feature/fix branch with an explicit refspec (e.g. `git push origin fix/fx-01-short-link`). Before pushing, verify the target branch is NOT `main`.
+- **Push Allowed to Feature Branches (Push ได้เฉพาะ Branch งานของตัวเอง)**: The AI agent MAY `git push` to a project codebase or microservice repository (GitLab / GitHub), but ONLY to its own feature/fix branch with an explicit refspec (e.g. `git push origin fix/fx-01-isv-test`). Before pushing, verify the target branch is NOT `main`.
 - **Never Merge or Auto-Merge into Main (ห้าม Merge / Auto Merge เข้า main ทุกกรณี)**: The AI agent MUST NEVER:
   1. Push directly to `main` (e.g. `git push origin main`, `git push origin HEAD:main`).
   2. Run `git merge` / `git rebase` onto local `main` followed by a push, or force-push (`--force`, `--force-with-lease`) to any shared branch.
   3. Enable auto-merge on any MR/PR targeting `main` (e.g. `-o merge_request.merge_when_pipeline_succeeds`, `-o merge_request.target=main` combined with auto-merge, `glab mr merge`, `gh pr merge --auto`, "Merge when pipeline succeeds").
   - Merging into `main` is done **only by a human** via GitLab/GitHub MR review.
-- **Mandatory `--no-track` When Branching (ต้องใส่ --no-track เสมอเมื่อแตก Branch จาก main)**: Whenever creating a new branch from `main` or any remote branch, the AI agent MUST strictly use the `--no-track` flag (e.g. `git checkout --no-track -b <branch_name> origin/main`). The AI agent MUST NEVER allow Git to automatically attach upstream tracking (`branch.<name>.merge = refs/heads/main`), preventing accidental pushes or auto-merge routing into production `main`.
+- **Branch from `origin/main` Only (แตก Branch จาก origin/main เท่านั้น ไม่มีข้อยกเว้น)**: Every new branch MUST be created from `origin/main` — never from `uat-isv`, `dev`, `uat`, or any feature/hotfix branch. Name fix branches `fix/fx-01-<service>` (one per service; continue on it if it already exists).
+  - If the code to fix does not exist on `main` yet (e.g. it lives only on `dev` or a feature branch), the AI agent MUST NOT create a branch for it. Instead, produce a patch file (`git format-patch`) and hand it to the branch owner to apply.
+  - To test on UAT-ISV, merge in one direction only: work branch → `uat-isv`. Never merge `uat-isv` (or `dev`) back into a work branch.
+- **Mandatory `--no-track` When Branching (ต้องใส่ --no-track เสมอเมื่อแตก Branch จาก main)**: Whenever creating a new branch from `origin/main`, the AI agent MUST strictly use the `--no-track` flag (e.g. `git checkout --no-track -b <branch_name> origin/main`). The AI agent MUST NEVER allow Git to automatically attach upstream tracking (`branch.<name>.merge = refs/heads/main`), preventing accidental pushes or auto-merge routing into production `main`.
 - **Verify Clean Local Branch (ตรวจสอบสถานะ Branch บริสุทธิ์เสมอ)**: After creating a branch, always verify with `git branch -vv` that the newly created branch has NO upstream tracking bracket (`[origin/...]`) pointing to `main`.
 
