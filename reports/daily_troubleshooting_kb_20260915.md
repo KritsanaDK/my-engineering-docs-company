@@ -1,6 +1,6 @@
 # Daily Troubleshooting Playbook & GCP Log Knowledge Base
 
-**Date:** 2026-09-15 (Audit Updated: 2026-09-23 - Post Release af1dda7 & WS1-UAT-ISV 059c275)
+**Date:** 2026-09-15 (Audit Updated: 2026-09-23 - Post Release af1dda7 & WS1-UAT-ISV 059c275; Schema Audit 2026-09-23: SQL ทุกข้อตรวจกับ `information_schema` + `EXPLAIN` บน UAT-ISV แล้ว — แก้ #11, #13, #18, #21, #22, #26)
 **Topic:** GCP Production Logs Analysis & Resolution Guides (คู่มือวิเคราะห์และแก้ปัญหาจาก Log GCP)
 **Status:** Audited against Git `origin/main` (ตรวจสอบสถานะจริงเทียบกับ Branch Main ของทุกระบบ)
 
@@ -31,9 +31,9 @@
 | **10** | **P0** | **ส่งตัดเงินซ้ำได้แม้ Lead จ่ายสำเร็จแล้ว** _(Repeat Charge Bypass)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | แก้ `NamedExec` บน SELECT เป็น `SELECT 1 ... LIMIT 1` ป้องกันจ่ายซ้ำ (`c299fe4`, `af1dda7`) |
 | **11** | **P2** | **ส่ง SMS ต่ออายุผิด ทั้งที่ซื้อ พ.ร.บ. ใหม่แล้ว** _(False Renewal SMS)_ | `notification` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | ตรวจสอบอายุ 90 วันและเลขตัวถังอยู่ใน `fn_policy_renewal` (WS7) บน uat-isv รอขึ้น Prod |
 | **12** | **P2** | **Home Service HTTP 500 ไร้ Error Log** _(Silent 500 on GetLead)_ | `home-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เปรียบเทียบ Error string ไม่ตรง (รวม branch `hot-fix-getlead` แล้วบน uat-isv รอขึ้น Prod) |
-| **13** | **P0** | **Motor Lead ชนซ้ำจาก MAX()+1** _(Motor Lead MAX+1 Race)_ | `nodejs-express-premium-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | แก้ใน branch `fix/motor-lead-no-sequence` (`d20771f`) เปลี่ยนใช้ Sequence รอขึ้น Prod |
+| **13** | **P0** | **Motor Lead ชนซ้ำจาก MAX()+1** _(Motor Lead MAX+1 Race)_ | `nodejs-express-premium-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | บน `uat-isv` คือ `d031a3f` (`hotfix/motor-lead-no-default`) ใช้ `seq_lead_no` — ⚠️ DDL `seq_motor_lead_no` เดิมใช้ไม่ได้ ดูผลตรวจใน Issue #13 |
 | **14** | **P1** | **CMI ปฏิเสธทะเบียนผิดมาตรฐาน ขบ.** _(CMI Invalid Plate 2BUS0216)_ | `uam-service` / `policy-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | WS3 กรองทะเบียน/จังหวัดแล้ว + OIC Sanitization ใน `hotfix/oic-uat` |
-| **15** | **P1** | **URL Shortener โดน Cloudflare บล็อก** _(Short Link WAF Block)_ | `isv-test` | ❌ ยังไม่แก้ | ❌ ยังไม่มี | ❌ ยังมีปัญหา | `POST /short_link` ติด WAF บล็อก (ขาด Custom User-Agent / Double Slash) |
+| **15** | **P1** | **URL Shortener โดน Cloudflare บล็อก** _(Short Link WAF Block)_ | `isv-test` | ✅ แก้แล้ว | ❌ ยังไม่มี | ❌ ยังมีปัญหา | Commit `92688d2` บน `fix/fx-01-isv-test` (Local) — ใส่ User-Agent + ตัด `//` ครบ 3 จุดเรียก (`/short_link`, Renewal SMS, Shopee) |
 | **16** | **P0** | **UAM Email & OTP ล่มทั้งระบบ** _(UAM Hairpin Loop Failure)_ | `uam-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_uam_prod.yaml` ชี้ Internal DNS แล้ว |
 | **17** | **P1** | **Backoffice ส่ง Policy Email ล้มเหลว** _(Large PDF Resend Gateway Fail)_ | `lead-policy-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_lead_policy_prod.yaml` แล้ว |
 | **18** | **P0** | **ลูกค้าชำระเงินต่ออายุไม่ได้** _(Missing ref_policy_no on Renewal)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | Guard ป้องกันข้อมูลหลุดถาวรอยู่ใน WS7 บน uat-isv (`fn_policy_renewal`) รอขึ้น Prod |
@@ -41,7 +41,7 @@
 | **20** | **P2** | **Cloud SQL CPU Spike 17:00 SOP** _(EOD Batch vs Deploy Diagnostic)_ | Cloud SQL (`insureverse-prod`) | ℹ️ มี SOP | ℹ️ ใช้งานอยู่ | ℹ️ ใช้งานอยู่ | CPU พุ่ง 28.4% จาก Daily EOD Batch SOP ให้เช็ค Query Insights ก่อนสรุปว่าเกิดจาก Deploy |
 | **21** | **P0** | **2C2P Callback Panic จาก Type Assertion** _(Salesforce Auth Nil Panic)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | แก้ nil check ใน `saleforce.go` + `sync.RWMutex` (เสริม safe `sf_account` `059c275`) |
 | **22** | **P0** | **ต่อ TLS ไม่ผ่าน (ใบรับรองไม่ถูก trust) — อีเมลไม่ออก** _(SMTP TLS Unknown Authority)_ | `notification-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | อัปเกรดเป็น Distroless Debian 12 รองรับ GlobalSign Root R46 (`700776d`) |
-| **23** | **P1** | **OCR Passport Reader ล่มจาก DNS NXDOMAIN** _(OCR MRZ DNS Fail)_ | `uam-service` | ❌ ยังไม่แก้ | ❌ ยังไม่มี | ❌ ยังมีปัญหา | สแกน Passport OCR ล่มจาก DNS หา eKYC ไม่เจอ ขาด Graceful Fallback กรอกมือ |
+| **23** | **P1** | **OCR Passport Reader ล่มจาก DNS NXDOMAIN** _(OCR MRZ DNS Fail)_ | `uam-service` | ✅ แก้แล้ว | ✅ รวม uat-isv แล้ว | ⏳ รอขึ้น | Fallback ตอบ 200 + `can_manual: true` แทน 500 (Commit `3c0d2ed` บน `fix/fx-01-uam`) |
 | **24** | **P2** | **GCP LB 503 ((no backend)) บน Partner Token** _(OAuth2 NEG Drop)_ | `openapi-oauth-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_oauth2_prod.yaml` (Mem 256Mi/15s) แล้ว |
 | **25** | **P2** | **CORS OPTIONS 503 ((no backend)) บน Analytics** _(Analytics Preflight Drop)_ | `backend-analytics-service` | 🟡 มี Patch แล้ว | ✅ ผ่านแล้ว | ⏳ รอขึ้น | เตรียม Patch ใน `deploy_jobs/03_fixes/helm_patches/patch_analytics_prod.yaml` (PreStop) แล้ว |
 | **26** | **P0** | **2C2P Callback 502 Pod ปิดสายหนี (3.1s)** _(2C2P Callback TCP Drop)_ | `purchase-service` | ✅ แก้แล้ว | ✅ ผ่านแล้ว | ✅ ขึ้นแล้ว | ขจัด Go Panic ตัดวงจร 502 TCP Drop ตอบกลับ 200 OK สมบูรณ์ (แก้คู่กับ #21) |
@@ -65,9 +65,9 @@
 | ลำดับ | ระบบ / ไมโครเซอร์วิส (Service Name) | จำนวน | รายการปัญหา (Issues Included) | ระดับความสำคัญ | สถานะบน `main` (Production) | สถานะบน `uat-isv` |
 | :---: | :--- | :---: | :--- | :---: | :--- | :--- |
 | **1** | **`go-echo-purchase-service`** | **6 ข้อ** | • **Issue #5:** พ.ร.บ. ออกเลขแต่ข้าม IIA/SF <br>• **Issue #7:** 2C2P เลข Invoice ซ้ำ ลูกค้าจ่ายไม่ได้ <br>• **Issue #9:** PA/Home deli_address_th = NULL <br>• **Issue #10:** NamedExec SELECT จ่ายซ้ำทะลุ <br>• **Issue #18:** Renewal missing ref_policy_no <br>• **Issue #21 & #26:** 2C2P SF Auth Nil Panic & 502 TCP Drop | **P0 (4)**<br>P1 (2) | • **#5, #7, #9, #10, #21, #26:** ✅ แก้และ Deploy แล้วบน `origin/main` (Commit `af1dda7`) <br>• **#18:** ⏳ อยู่บน `origin/hotfix/ws7-renew` รอขึ้น Prod | • **#5, #7, #9, #10, #21, #26:** ✅ รวมบน `uat-isv` แล้ว <br>• **#18:** ✅ รวมใน WS7 บน `uat-isv` แล้ว <br>• **#21:** 🛡️ เสริม safe dereference `sf_account` (Commit `059c275` / `263a6ee`) |
-| **2** | **`go-echo-uam-service`** | **6 ข้อ** | • **Issue #1:** IIA Silent Fail <br>• **Issue #2:** SF มี Record ซ้ำ <br>• **Issue #3:** SF ขาดกรมธรรม์หลัก (Parent Policy) <br>• **Issue #14:** CMI ปฏิเสธทะเบียน ขบ. (Regex) <br>• **Issue #16:** UAM Hairpin Loop Email & OTP <br>• **Issue #23:** OCR Passport MRZ DNS NXDOMAIN | **P0 (1)**<br>P1 (5) | • **#1, #14:** ✅ แก้แล้วบน `origin/main` <br>• **#2:** ⚠️ จัดการ Manual บน Salesforce <br>• **#3:** ⏳ อยู่บน `uat-isv (WS6)` รอขึ้น Prod <br>• **#16, #23:** ❌ ยังไม่แก้บน `origin/main` | • **#1, #14:** ✅ รวมบน `uat-isv` <br>• **#3:** ✅ รวมใน WS6 บน `uat-isv` แล้ว <br>• **#16:** ✅ แก้แล้วบน `uat-isv` (`helm-uat-isv.yaml` ชี้ Internal DNS `backend-notification-service:8080`) <br>• **#23:** ⏳ ทดสอบ Fallback บน `uat-isv` |
+| **2** | **`go-echo-uam-service`** | **6 ข้อ** | • **Issue #1:** IIA Silent Fail <br>• **Issue #2:** SF มี Record ซ้ำ <br>• **Issue #3:** SF ขาดกรมธรรม์หลัก (Parent Policy) <br>• **Issue #14:** CMI ปฏิเสธทะเบียน ขบ. (Regex) <br>• **Issue #16:** UAM Hairpin Loop Email & OTP <br>• **Issue #23:** OCR Passport MRZ DNS NXDOMAIN | **P0 (1)**<br>P1 (5) | • **#1, #14:** ✅ แก้แล้วบน `origin/main` <br>• **#2:** ⚠️ จัดการ Manual บน Salesforce <br>• **#3:** ⏳ อยู่บน `uat-isv (WS6)` รอขึ้น Prod <br>• **#16, #23:** ❌ ยังไม่แก้บน `origin/main` | • **#1, #14:** ✅ รวมบน `uat-isv` <br>• **#3:** ✅ รวมใน WS6 บน `uat-isv` แล้ว <br>• **#16:** ✅ แก้แล้วบน `uat-isv` (`helm-uat-isv.yaml` ชี้ Internal DNS `backend-notification-service:8080`) <br>• **#23:** ✅ รวม `fix/fx-01-uam` (`3c0d2ed`) บน `uat-isv` แล้ว |
 | **3** | **`go-echo-notification-service`** | **3 ข้อ** | • **Issue #4:** GCP LB ตัด 30s (`get_noti_policy_expire`) <br>• **Issue #11:** ส่ง SMS ต่ออายุผิด ทั้งที่ซื้อใหม่แล้ว <br>• **Issue #22:** SMTP TLS Unknown Authority (อีเมลไม่ออก) | **P0 (1)**<br>P2 (2) | • **#22:** ✅ แก้แล้วบน `origin/main` (Distroless Debian 12) <br>• **#4:** ❌ ยังไม่แก้บน `origin/main` (ขาด BackendConfig 300s) <br>• **#11:** ⏳ อยู่บน `uat-isv (WS7)` รอขึ้น Prod | • **#22:** ✅ รวมบน `uat-isv` <br>• **#11:** ✅ รวมใน WS7 (`fn_policy_renewal` เช็ค Chassis 90 วัน) <br>• **#4:** ✅ รวมและ Deploy บน `uat-isv` แล้ว (Async Worker + Concurrency Guard) |
-| **4** | **`nodejs-express-premium-service`** | **1 ข้อ** | • **Issue #13:** Motor Lead ชนซ้ำจาก `MAX()+1` Race | **P0 (1)** | ⏳ อยู่บน `origin/fix/motor-lead-no-sequence` (d20771f) รอ DDL และขึ้น `main` | ✅ แก้และทดสอบแล้วบน `uat-isv` (ใช้ Sequence `seq_motor_lead_no`) |
+| **4** | **`nodejs-express-premium-service`** | **1 ข้อ** | • **Issue #13:** Motor Lead ชนซ้ำจาก `MAX()+1` Race | **P0 (1)** | ⏳ ยังไม่อยู่บน `main` — ต้องเลือกระหว่าง `d031a3f` / `d20771f` และเตรียม DDL ให้ตรง (ดู Issue #13) | ✅ แก้และทดสอบแล้วบน `uat-isv` (`d031a3f` ใช้ `DEFAULT nextval('seq_lead_no')`) |
 | **5** | **`go-fiber-policy-service`** | **1 ข้อ** | • **Issue #8:** ประกันสมัครใจ (MV) ส่ง IIA ไม่ผ่านเงียบๆ | **P1 (1)** | ✅ แก้แล้วบน `origin/main` (WS4 Reconcile Cron ส่งซ้ำอัตโนมัติ) | ✅ รวมบน `uat-isv` แล้ว (WS4 + OIC Compliant) |
 | **6** | **`go-echo-saleforce-service`** | **1 ข้อ** | • **Issue #19:** Salesforce API Waterfall โดน LB ตัด 30s | **P1 (1)** | ⏳ อยู่บน `origin/hotfix/ws6-saleforce-endoesement` รอขึ้น Prod | ✅ รวมบน `uat-isv` แล้ว (WS6 ปรับลด Waterfall) |
 | **7** | **`go-echo-lead-policy-service`** | **1 ข้อ** | • **Issue #17:** Backoffice ส่ง Policy Email ล้มเหลว (PDF ใหญ่) | **P1 (1)** | ❌ ยังไม่แก้บน `origin/main` (`helm-prod.yaml` ชี้ Hairpin นอก Cluster) | ⏳ ปรับ Helm ชี้ Internal DNS บน `uat-isv` |
@@ -100,9 +100,9 @@
 | **10** | **Repeat Charge Bypass** | `purchase-service` | `paymentController.go:141` เปลี่ยนจาก `NamedExec` เป็น Simple Fast Query `SELECT 1 ... LIMIT 1` และใช้ Go ตรวจสอบค่า Scan | ตาราง `insurverse.payment` (ฟิลด์ `payment_status = 'SUCCESS'`) | ✅ **แก้แล้วบน `main`** (Commit `af1dda7` / `c299fe4`) |
 | **11** | **False Renewal SMS** | `notification` | `renewal_prep.go:473` (เช็คเฉพาะ ref_policy_no) | Stored Proc: **`insurverse.fn_policy_renewal`** เพิ่มเช็ค `Chassis_No` คุ้มครองย้อนหลัง 90 วัน (WS7) | ⏳ **อยู่ที่ `uat-isv (WS7)`** (รอรัน DDL บน Prod DB) |
 | **12** | **GetLeadHome HTTP 500** | `home-service` | `home_service.go:555` (สตริง Error Mismatch `"leadHomeNo not found."` vs `%d`) | DB คืน `pgx.ErrNoRows` จากตาราง `lead_home` แต่ Controller ดักสตริงไม่ตรง ทำให้พ่น 500 ไร้ log | ❌ **ยังไม่แก้บน `main`** (มี branch `hot-fix-getlead`) |
-| **13** | **Motor Lead MAX()+1 Collision** | `premium-service` | `premium.controller.js:309` (คำนวณ `MAX("Lead_No")+1` ใน JavaScript) | ตาราง `Lead_coverage_premium` ต้องการ DB Sequence: **`insurverse.seq_motor_lead_no`** | ⏳ **อยู่ที่ branch `fix/motor-lead-no-sequence` (d20771f)** รอรัน DDL Sequence |
+| **13** | **Motor Lead MAX()+1 Collision** | `premium-service` | `premium.controller.js:309` (คำนวณ `MAX("Lead_No")+1` ใน JavaScript) | ตาราง `Lead_coverage_premium` — UAT-ISV ใช้ `DEFAULT nextval('insurverse.seq_lead_no')` (ไม่มี `seq_motor_lead_no`; `pg_get_serial_sequence` คืน NULL) | ⏳ **บน `uat-isv` คือ `d031a3f` (`hotfix/motor-lead-no-default`)** — ต้องเลือก branch และเตรียม DDL ให้ตรงก่อนขึ้น Prod |
 | **14** | **CMI Invalid Plate** | `uam-service` | `cmiRealtimeController.go` (ทำ Data Sanitization, Truncation, และ Plate Fallback) | ตาราง `Policy_Car_Act_Discount_Premium` ฟิลด์ `Car_license_no`, `Car_license_provice` | ✅ **แก้แล้วบน `main` (WS3)** / OIC Sanitization อยู่ใน `hotfix/oic-uat` |
-| **15** | **Short Link WAF Block** | `isv-test` | `short_link.go` (ขาด User-Agent, มี Double Slash ใน URL) | ไม่มี DB เกี่ยวข้อง (เรียก REST API ไปยัง WordPress Shortify ภายนอก) | ❌ **ยังไม่แก้บน `main`** (แก้ User-Agent & Trim Slash) |
+| **15** | **Short Link WAF Block** | `isv-test` | `short_link.go` (ขาด User-Agent, มี Double Slash ใน URL) | ไม่มี DB เกี่ยวข้อง (เรียก REST API ไปยัง WordPress Shortify ภายนอก) | ❌ **ยังไม่แก้บน `main`** — โค้ดแก้แล้วบน `fix/fx-01-isv-test` (`92688d2`) ยังไม่ขึ้น UAT-ISV |
 | **16** | **UAM Hairpin Loop** | `uam-service` | `helm/helm-prod.yaml:45` (`Backend_Notification` ชี้ออกเน็ตนอก) + `notificationController.go:54` defer bug | ตาราง `sec_user` (การยืนยัน Email/OTP) | ❌ **ยังไม่แก้บน `main` (วิกฤต)** (แก้ 1 บรรทัดใน Helm) |
 | **17** | **Backoffice Email Gateway Fail** | `lead-policy-service` | `helm/helm-prod.yaml:51` (`EMAIL_URL` ชี้ออกเน็ตนอก) แนบ PDF หลาย MB โดน Gateway ตัด 2.2s | ตาราง `lead_policy`, ไฟล์ PDF กรมธรรม์ใน Storage/DB | ❌ **ยังไม่แก้บน `main`** (เปลี่ยน Helm ชี้ Internal DNS) |
 | **18** | **Renewal missing ref_policy_no** | `purchase-service` | `paymentController.go:460` (บล็อก HTTP 400 ถ้า `ref_policy_no IS NULL`) | ตาราง `Lead_coverage_premium.ref_policy_no` ว่าง; Stored Proc `fn_policy_renewal` (WS7) ซ่อมผูกให้ | ⏳ **อยู่ที่ `uat-isv (WS7)`** (เคสจริงแก้ Manual SQL แล้ว) |
@@ -110,7 +110,7 @@
 | **20** | **Cloud SQL CPU Spike 17:00** | Cloud SQL | ไม่มี Code Application เกี่ยวข้อง | Database Engine: ตรวจสอบ `pg_stat_activity`, Query Insights, Autovacuum, และ Daily EOD Batch Queries | ℹ️ **Operational SOP** (แนวทางปฏิบัติการ) |
 | **21** | **2C2P SF Auth Nil Panic** | `purchase-service` | `thirdparty/saleforce.go:75` (เติม nil check + `sync.RWMutex`); เสริม safe dereference `sf_account` ใน `coreController.go:2850` (Commit `059c275` บน `uat-isv`) | ตาราง `payment` บันทึก `payment_status = SUCCESS` แล้ว แก้ Go Panic ทำให้ `Policy_Header` ถูกสร้างสำเร็จ 100% | ✅ **แก้แล้วบน `main`** (Commit `af1dda7` / `89e58fe`) |
 | **22** | **SMTP TLS Unknown Authority** | `notification` | `Dockerfile` อัปเกรดเป็น `distroless/base-debian12` มี GlobalSign Root R46 | ตาราง `Policy_Header` (มี 591 กรมธรรม์ที่ออกช่วง 10:25–15:45 วันที่ 17 ก.ย. ค้างส่งอีเมล) | ✅ **แก้แล้วบน `main`** (Commit `700776d`) รอยิง SQL Resend |
-| **23** | **OCR Passport MRZ DNS Fail** | `uam-service` | `ekycController.go:943` ขาด Graceful Fallback ไปหน้า Manual Input เมื่อ Downstream ตาย | ตาราง `log_yipinsoi` / `log_ekyc_solution` เก็บ error NXDOMAIN | ❌ **ยังไม่แก้บน `main`** (ปรับ Code Fallback) |
+| **23** | **OCR Passport MRZ DNS Fail** | `uam-service` | `ekycController.go:943` ขาด Graceful Fallback ไปหน้า Manual Input เมื่อ Downstream ตาย | ตาราง `log_yipinsoi` / `log_ekyc_solution` เก็บ error NXDOMAIN | ❌ **ยังไม่แก้บน `main`** — โค้ด Fallback เสร็จแล้วบน `fix/fx-01-uam` (`3c0d2ed`) รวม `uat-isv` แล้ว รอ MR เข้า `main` |
 | **24** | **OAuth2 LB 503 ((no backend))** | `go-oauth2-server` | `helm/helm-prod.yaml` (`memory: 128Mi` OOMKill, `initialDelaySeconds: 60`) | ตาราง `oauth_access_tokens`, `oauth_clients` | ❌ **ยังไม่แก้บน `main`** (เพิ่ม Memory 256Mi, ลด Delay 15s) |
 | **25** | **Analytics CORS 503 ((no backend))** | `analytics-service` | `helm/helm-prod.yaml` (`initialDelaySeconds: 60` ขาด `lifecycle.preStop`) | ตาราง `analytics_events` | ❌ **ยังไม่แก้บน `main`** (ลด Delay 15s + ใส่ preStop hook) |
 | **26** | **2C2P Callback 502 TCP Drop** | `purchase-service` | `paymentController.go` ขจัด Go Panic ตอบกลับ HTTP 200 OK สมบูรณ์ (แก้คู่กับ Issue #21) | ตาราง `payment` เงินตัดและสร้าง `Policy_Header` ครบถ้วน | ✅ **แก้แล้วบน `main`** (Commit `af1dda7` / `89e58fe`) |
@@ -126,7 +126,7 @@
    - **#5:** `fn_lead_to_car_act` (มี Advisory Lock แล้วบน Prod)
    - **#7:** `fn_policy_invoiceno_iia` (มี Advisory Lock แล้วบน Prod)
    - **#11:** `fn_policy_renewal` (อยู่ใน WS7 บน `uat-isv`)
-   - **#13:** ต้องรัน DDL สร้าง `seq_motor_lead_no` บน DB
+   - **#13:** ต้องเตรียม DDL Sequence บน Prod ให้ตรงกับ branch ที่เลือก (UAT-ISV ใช้ `seq_lead_no` ไม่ใช่ `seq_motor_lead_no`)
    - **#14:** Regex และ Manual SQL สำหรับเลขทะเบียนหลุดฟอร์แมต
    - **#18:** Stored Proc `fn_policy_renewal` ในการผูก `ref_policy_no`
    - **#19:** `fn_sf_policy_endorse_financial` (อยู่ใน WS6 บน `uat-isv`)
@@ -448,12 +448,12 @@
 
 #### 🛠️ การแก้ไขปัญหา (Resolution & Recovery)
 
-- **Code Fix (SQL Logic):** เพิ่มเงื่อนไขตรวจสอบซ้ำด้วย **เลขตัวถังรถ (`Chassis_No`)** ที่ยังมีผลคุ้มครอง Active อยู่:
+- **Code Fix (SQL Logic):** เพิ่มเงื่อนไขตรวจสอบซ้ำด้วย **เลขตัวถังรถ (คอลัมน์จริงชื่อ `Car_serial_no`)** ที่ยังมีผลคุ้มครอง Active อยู่ (✅ Schema verified 2026-09-23: ไม่มีคอลัมน์ `Chassis_No` / `End_Date`):
   ```sql
   AND NOT EXISTS (
       SELECT 1 FROM insurverse."Policy_Car_Act_Discount_Premium" active_mc
-       WHERE active_mc."Chassis_No" = due_by_date."Chassis_No"
-         AND active_mc."End_Date" > CURRENT_DATE
+       WHERE active_mc."Car_serial_no" = due_by_date."Car_serial_no"
+         AND active_mc."End_date" > CURRENT_DATE
          AND active_mc."Car_Act_No" != due_by_date."Car_Act_No"
   )
   ```
@@ -496,8 +496,8 @@
 ### Issue #13: Motor Lead ชนซ้ำจาก MAX()+1 (Motor Lead MAX+1 Race Collision)
 
 - **สถานะการแก้ไข (Status):**
-  - **Production (`origin/main`):** ⏳ **รอคิว Deploy ขึ้น Prod (อยู่ใน Branch `fix/motor-lead-no-sequence` Commit `d20771f`)** (รอรัน DDL สร้าง Sequence `seq_motor_lead_no` บน Prod DB)
-  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้และทดสอบแล้วบน `uat-isv`** (ตารางและโค้ดใช้ Sequence `seq_motor_lead_no` ขจัดปัญหา MAX+1 Collision 100%)
+  - **Production (`origin/main`):** ⏳ **รอคิว Deploy ขึ้น Prod** (ยังไม่ได้เลือกว่าจะ Promote `d031a3f` หรือ `d20771f` — DDL ต้องตรงกับ branch ที่เลือก ดูผลตรวจด้านล่าง)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้และทดสอบแล้วบน `uat-isv`** (โค้ด `d031a3f` จาก `hotfix/motor-lead-no-default` ใช้ `DEFAULT nextval('insurverse.seq_lead_no')` — ไม่ใช่ `seq_motor_lead_no` ดูผลตรวจด้านล่าง)
 
 - **Log/ข้อความที่พบ:** `Motor lead duplicate key (Lead_No) · 148 บรรทัดใน 6 นาที · MAX()+1 race, premium.controller.js:309, ~3.5yr-old bug`
 - **ระดับความสำคัญ:** **P0 - Critical**
@@ -521,7 +521,19 @@
    - **Silent Cross-Customer Data Hijacking:** คำสั่งที่สองที่ส่งคืน `Lead_No` ให้ User ใช้ `SELECT MAX("Lead_No")` หากมีคำขอของลูกค้าคนอื่น Insert เข้ามาคั่นกลาง ลูกค้าคนแรกจะได้รับเลข Lead ของอีกคนไปดำเนินการชำระเงินแทนทันที
 3. **สาเหตุที่ยังหลุดอยู่บน Production:** เคยมี Merge Request !170 (Commit `310c36f`) พยายามแก้ แต่ถูก Revert (Commit `7a21330`) เนื่องจากยังไม่ได้สร้าง DB Sequence ล่วงหน้า และตัวแก้ล่าสุดใน branch `hotfix/motor-lead-no-default` (Commit `d031a3f`) ถูกเทสใน `uat-isv` แล้วแต่ยังไม่ได้ Promote และ Deploy ขึ้น Production (`origin/main`)
 
-#### 🛠️ การแก้ไขปัญหา (Resolution & Recovery)
+#### ⚠️ ผลตรวจจริง 2026-09-23 (Code + DB Dual-Inspection บน UAT-ISV) — ต้องอ่านก่อนเตรียม Prod Pack
+
+| สิ่งที่ตรวจ | ผลจริง |
+| :--- | :--- |
+| Branch ที่ถูกต้อง | มี 3 ตัว: `fix/motor-lead-no-sequence` (`d20771f`), `fix/motor-lead-no-sequence-uat` (`310c36f` ตัวที่เคยถูก Revert), `hotfix/motor-lead-no-default` (`d031a3f`) — **ที่รวมอยู่บน `uat-isv` จริงคือ `d031a3f` เท่านั้น** (`d20771f` ไม่อยู่ทั้งใน `main` และ `uat-isv`) |
+| Sequence บน UAT-ISV | **ไม่มี `seq_motor_lead_no`** — คอลัมน์ `Lead_No` ใช้ `DEFAULT nextval('insurverse.seq_lead_no')` (last_value = MAX(Lead_No) = 92369 ตรงกัน) |
+| โค้ด `d20771f` | ใช้ `nextval(pg_get_serial_sequence('insurverse."Lead_coverage_premium"','Lead_No'))` ซึ่งบน UAT-ISV คืน **NULL** เพราะ `seq_lead_no` ไม่ได้ `OWNED BY` คอลัมน์ → ถ้า Deploy `d20771f` บน DB สภาพนี้ **Insert Motor Lead จะพังทุกครั้ง** |
+
+**สรุป:** DDL ด้านล่าง (สร้าง `seq_motor_lead_no`) **ไม่ตรงกับทั้งโค้ดและ DB ที่ทดสอบบน UAT-ISV** ห้ามรันบน Prod ตามนี้ ต้องเลือกก่อนว่าจะ Promote branch ไหน แล้วเตรียม DDL ให้ตรง:
+- ถ้าใช้ `d031a3f` (ตัวที่อยู่บน UAT-ISV): Prod ต้องมี `seq_lead_no` + `ALTER COLUMN "Lead_No" SET DEFAULT nextval('insurverse.seq_lead_no')` + `setval` จาก `MAX("Lead_No")`
+- ถ้าใช้ `d20771f`: ต้องเพิ่ม `ALTER SEQUENCE insurverse.seq_lead_no OWNED BY insurverse."Lead_coverage_premium"."Lead_No";` และต้องทดสอบบน UAT-ISV ก่อน
+
+#### 🛠️ การแก้ไขปัญหา (Resolution & Recovery) — ⚠️ DDL ข้อ 1 ด้านล่างเป็นร่างเดิม ใช้ไม่ได้ตามผลตรวจข้างบน
 
 1. **เตรียม Database Sequence บน Production ให้พร้อม (Rule 5 Compliant):**
    ```sql
@@ -608,7 +620,7 @@
 ## 5. 🎯 แผนปฏิบัติการตามลำดับความสำคัญ (Execution Action Plan)
 
 1. **ลำดับที่ 1 (ด่วนที่สุด - P0):**
-   - **[NEW] แก้ปัญหา Motor Lead Collision (Issue #13):** รัน DB Script สร้าง Sequence `seq_motor_lead_no` บน Production แล้ว Deploy โค้ด `RETURNING "Lead_No"` จาก `hotfix/motor-lead-no-default` เข้าสู่ `main` ทันที
+   - **[NEW] แก้ปัญหา Motor Lead Collision (Issue #13):** เลือก branch (`d031a3f` ที่ทดสอบบน UAT-ISV แล้ว) เตรียม DDL `seq_lead_no` ให้ตรงกับที่ UAT-ISV ใช้ แล้ว Deploy เข้า `main` (⚠️ อย่าใช้ DDL `seq_motor_lead_no` เดิม)
    - ปลดล็อกให้ลูกค้า **Lead 255955** ด้วยการ Generate เลข Invoice ใหม่
    - แก้ไขบั๊ก `NamedExec` บน SELECT ใน `paymentController.go:141` เพื่อป้องกันการตัดเงินซ้ำ
 2. **ลำดับที่ 2 (สำคัญสูง - P1):**
@@ -627,7 +639,9 @@
 
 - **สถานะการแก้ไข (Status):**
   - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (ขาด Custom User-Agent และ Trim Trailing Slash ทำให้ติด Cloudflare WAF)
-  - **UAT-ISV (`origin/uat-isv`):** ⏳ **อยู่ระหว่างทดสอบ Custom Headers บน `uat-isv`** (จำลองการยิงผ่าน WAF เพื่อไม่ให้โดน Rate Limit/Bot Protection)
+  - **Application Code:** ✅ **แก้โค้ดแล้ว (Local)** Commit `92688d2` บน `fix/fx-01-isv-test` (แตกจาก `origin/main`) — เพิ่ม `util.ShortLinkEndpoint` (ตัด `/wp-json...` และ `/` ท้าย) + `User-Agent: Insurverse-Backend-Service/1.0` ครบ **3 จุดเรียก**: `controller/short_link.go`, `service/renew_policy_service.go` (SMS ต่ออายุ), `usecase/shopee/usecase.go` + Timeout 10s ให้ `/short_link`
+  - **UAT-ISV (`origin/uat-isv`):** ❌ **ยังไม่ได้รวมเข้า `uat-isv`**
+  - ℹ️ Fallback คืน Long URL: Renewal SMS และ Shopee มีอยู่แล้ว ส่วน `POST /short_link` ยังตอบ 500 (รอตัดสินใจเพราะเปลี่ยน API Contract)
 
 - **Log/ข้อความที่พบ:**
   ```text
@@ -663,6 +677,7 @@
 - **สถานะการแก้ไข (Status):**
   - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main - วิกฤต P0)** (`helm/helm-prod.yaml:45` ชี้ `Backend_Notification` ออกเน็ตนอกทำให้เกิด Hairpin Loop Timeout)
   - **UAT-ISV (`origin/uat-isv`):** ✅ **แก้ไขแล้วบน `uat-isv`** (`helm/helm-uat-isv.yaml` ชี้ Internal DNS `http://backend-notification-service:8080/api/v1/notification/` เรียบร้อยแล้ว พร้อมนำไปใส่ใน `helm-prod.yaml`)
+  - ⚠️ **ขัดกับนโยบาย `deploy_jobs/03_fixes/README.md`** (ห้ามแก้ `helm-prod.yaml` ตรง ให้ใช้ `helm_patches/patch_uam_prod.yaml`): Commit `3c0d2ed` บน `fix/fx-01-uam` **แก้ `helm/helm-prod.yaml` ตรงแล้ว** (`Backend_Notification` → Internal DNS) รวมถึงแก้ `defer res.Body.Close()` — ต้องตัดสินใจก่อน MR เข้า `main` ว่าจะเก็บการแก้ Helm ใน commit นี้ หรือถอยออกแล้วใช้ Helm Patch แทน (อย่าทำทั้งสองทาง)
 
 - **Log/ข้อความที่พบ:**
   - `POST /api/v1/uam/forget_password · 4 ครั้งใน 8 นาที · ใช้เวลา 27 ms · Error on response. [ERROR] - <nil>`
@@ -754,16 +769,19 @@
 2. **อัปเดตผูกเลขกรมธรรม์เดิมใน Database:**
 
    ```sql
-   -- 1. ค้นหากรมธรรม์เดิมของลูกค้า
-   SELECT "Policy_No", "id_card", "car_license_no", "Policy_Enddate"
-   FROM insurverse."Policy_Header"
-   WHERE "id_card" = (SELECT "id_card" FROM insurverse."Lead_Header" WHERE "Lead_No" = <LEAD_NO>)
-   ORDER BY "Policy_Enddate" DESC LIMIT 1;
+   -- ✅ Schema verified 2026-09-23 (UAT-ISV): ไม่มีตาราง Lead_Header และ Policy_Header ไม่มี id_card
+   --    ใช้เลขบัตรผู้เอาประกันคนที่ 1 (par_citizen_id_1) ของ Lead จับคู่กับ Policy_Header."Par_citizen_id_1"
+   -- 1. ค้นหากรมธรรม์เดิมของลูกค้า (แสดง 5 รายการ ให้คนเลือกใบที่ทะเบียน/เลขตัวถังตรงกับรถคันที่ต่ออายุ)
+   SELECT ph."Policy_No", ph."Car_license_no", ph."Car_serial_no", ph."Policy_Enddate"
+   FROM insurverse."Policy_Header" ph
+   JOIN insurverse."Lead_coverage_premium" lcp ON lcp."Lead_No" = <LEAD_NO>
+   WHERE ph."Par_citizen_id_1" = lcp.par_citizen_id_1
+   ORDER BY ph."Policy_Enddate" DESC LIMIT 5;
 
-   -- 2. ผูก ref_policy_no ให้ Lead เพื่อให้จ่ายเงินได้ทันที
+   -- 2. ผูก ref_policy_no ให้ Lead เพื่อให้จ่ายเงินได้ทันที (กันเขียนทับค่าเดิมด้วย IS NULL)
    UPDATE insurverse."Lead_coverage_premium"
    SET "ref_policy_no" = '<ORIGINAL_POLICY_NO>'
-   WHERE "Lead_No" = <LEAD_NO>;
+   WHERE "Lead_No" = <LEAD_NO> AND "ref_policy_no" IS NULL;
    ```
 
 ---
@@ -889,7 +907,7 @@
    +		return "", false, errors.New("invalid salesforce access_token or instance_url")
    +	}
    ```
-2. **ลงทะเบียน Recover ใน `main.go`:** เพิ่ม `e.Use(middleware.Recover())`
+2. **ลงทะเบียน Recover ใน `main.go`:** เพิ่ม `e.Use(middleware.Recover())` — ✅ ตรวจ 2026-09-23: มีแล้วที่ `main.go:40` ทั้งบน `origin/main` และ `origin/uat-isv`
 3. **แยก SF Sync ออกจาก Critical Path:** นำการซิงก์ Salesforce ออกจาก Blocking Path ของ 2C2P Callback ให้ไปรันใน Goroutine/Queue แทน
 4. **ค้นหาและกู้คืนเคสลูกค้าที่ค้าง (Data Recovery SQL):**
    ```sql
@@ -898,7 +916,8 @@
    WHERE p."updated_at" >= '2026-09-16 15:02:00'
      AND p."payment_status" = 'SUCCESS'
      AND NOT EXISTS (
-         SELECT 1 FROM insurverse."Policy_Header" ph WHERE ph."Lead_No" = p."lead_no"
+         -- payment.lead_no เป็น integer แต่ Policy_Header."Lead_No" เป็น varchar ต้อง cast
+         SELECT 1 FROM insurverse."Policy_Header" ph WHERE ph."Lead_No" = p."lead_no"::text
      )
    ORDER BY p."updated_at" DESC;
    ```
@@ -961,17 +980,18 @@
 4. **สคริปต์ SQL ดึงรายชื่อกรมธรรม์ที่ต้องยิง Resend อีเมล (Data Recovery SQL):**
    ```sql
    -- ค้นหากรมธรรม์ที่ออกตั้งแต่ 10:25 วันที่ 17 ก.ย. 2026 เพื่อเตรียมส่งอีเมล E-Policy ซ้ำ
+   -- ✅ Schema verified 2026-09-23 (UAT-ISV): Policy_Header ไม่มี id_card / car_license_no / created_at
    SELECT 
        ph."Policy_No",
        ph."Lead_No",
-       ph."id_card",
+       ph."Owner_citizen_id",
        ph."email",
-       ph."car_license_no",
+       ph."Car_license_no",
        ph."Policy_Startdate",
-       ph."created_at"
+       ph."Create_date"
    FROM insurverse."Policy_Header" ph
-   WHERE ph."created_at" >= '2026-09-17 10:25:00'
-   ORDER BY ph."created_at" ASC;
+   WHERE ph."Create_date" >= '2026-09-17 10:25:00'
+   ORDER BY ph."Create_date" ASC;
    ```
 
 ---
@@ -980,7 +1000,8 @@
 
 - **สถานะการแก้ไข (Status):**
   - **Production (`origin/main`):** ❌ **ยังไม่ได้รับการแก้ไขบน Prod (main)** (DNS หา `api.ekycsolution.com` ไม่เจอ ขาด Graceful Fallback ไปหน้า Manual Input)
-  - **UAT-ISV (`origin/uat-isv`):** ⏳ **อยู่ระหว่างทดสอบ Graceful Fallback บน `uat-isv`** (เมื่อ Downstream เกิด NXDOMAIN ให้เปิดช่องทางให้ลูกค้ากรอกข้อมูลบัตร/พาสปอร์ตเอง)
+  - **Application Code:** ✅ **แก้โค้ดแล้ว** (Commit `3c0d2ed` บน branch `fix/fx-01-uam` แตกจาก `main` — ตอบ HTTP 200 + `"is_success": false, "can_manual": true` ตาม diff ด้านล่างทุกบรรทัด)
+  - **UAT-ISV (`origin/uat-isv`):** ✅ **รวม `fix/fx-01-uam` เข้า `uat-isv` แล้ว** (ตรวจ 2026-09-23: branch เป็น ancestor ของ `origin/uat-isv`) — ต้องให้ Frontend ทดสอบว่าสลับไปหน้ากรอกมือเมื่อได้ `can_manual: true`
 
 - **Log/ข้อความที่พบ:**
   ```text
@@ -1184,7 +1205,7 @@
        p."updated_at",
        ph."Policy_No"
    FROM insurverse.payment p
-   LEFT JOIN insurverse."Policy_Header" ph ON ph."Lead_No" = p."lead_no"
+   LEFT JOIN insurverse."Policy_Header" ph ON ph."Lead_No" = p."lead_no"::text  -- integer vs varchar
    WHERE p."updated_at" BETWEEN '2026-09-17 15:20:00' AND '2026-09-17 15:30:00'
    ORDER BY p."updated_at" DESC;
    ```
