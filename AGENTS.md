@@ -1,40 +1,27 @@
 # AGENTS.md - Golden Rules for Agent Behavior
 
-## 📌 Rule 1: Mandatory Implementation Plan First (ต้องทำแผนงานก่อนเสมอ)
+This document defines the engineering standards, operational constraints, and behavioral protocols for AI agents across all workspaces and platforms (Antigravity IDE, Claude Code CLI, Claude Desktop, Cursor, OpenAI Codex).
+
+---
+
+## 🌐 PART A: Universal Core Rules (ใช้ได้กับทุกโปรเจกต์ ทั้งงานบริษัทและงานส่วนตัว)
+
+### 📌 Rule 1: Mandatory Implementation Plan First (ต้องทำแผนงานก่อนเสมอ)
 - **Always Plan Before Execution**: Before modifying any code, executing git operations (merge, revert, push), or running deployment commands, the AI agent MUST create a detailed step-by-step Implementation Plan and wait for explicit user approval.
 - **No Unapproved Actions**: Never execute modifying operations without user consent.
 
-## 📌 Rule 2: Bilingual Communication (อธิบายสองภาษา Thai & English)
+### 📌 Rule 2: Bilingual Communication (อธิบายสองภาษา Thai & English)
 - **TH & EN Explanations**: Always provide all responses, explanations, summaries, and plan outlines in both Thai (🇹🇭) and English (🇬🇧).
 
-## 📌 Rule 3: Mandatory DB Function Backup (ต้อง Backup Function ใน DB ก่อนแก้ไขเสมอ)
-- **Always Backup Before Modifying DB Objects**: Before creating, replacing (`CREATE OR REPLACE`), or modifying any PostgreSQL/MySQL stored procedure, function, trigger, or view on any database environment (UAT, UAT-ISV, Production), the AI agent MUST extract the existing definition and save a timestamped backup SQL file (e.g., `backup_<function_name>_YYYYMMDD_HHMMSS.sql` or in dedicated backup folders) before applying any changes.
-
-## 📌 Rule 4: Mandatory Test Citizen ID (กำหนดเลขบัตรประชาชนทดสอบ = 1111111111119 เสมอ)
-- **Always Use Standard Test Citizen ID**: For all test policy issuances, automated API runners, and test payload generations across UAT and UAT-ISV environments, the AI agent MUST strictly use:
-  - **Citizen ID:** `1111111111119`
-  - **First & Last Name:** `กฤษณะ วัฒนายนนต์` (Mr. Kritsana Watthaniyanon)
-  - **Email:** `kritsana.w.os@horixon-t8.com`
-  - **Phone:** `0628696603`
-  - **Standard Address:** `1 หมู่ 1`
-  - **Location Master IDs:** `provinceId: 10`, `districtId: 124`, `subdistrictId: 979`, `zipcode: "18110"` (จ.สระบุรี อ.เมือง ต.ปากเพรียว)
-
-## 📌 Rule 5: Mandatory Production Deployment Pack (ต้องเตรียมความพร้อมก่อน Deploy Prod เสมอ)
-- **Always Prepare Complete Production Package**: Whenever the user plans to deploy to Production, the AI agent MUST strictly prepare a comprehensive, structured Production Deployment Pack containing:
-  1. **Git Readiness**: Target branch, GitLab Merge Request (MR) links, source branch comparisons, commit summaries, and version tags.
-  2. **Production-Safe DB Script**: Minimal, exact DDL/DML migration scripts, dynamic sequence initialization (`setval` derived dynamically from `MAX(id) + 1` — NEVER hardcoded), stored procedure definitions with transaction advisory locks, and pre-deployment backup steps.
-  3. **Deployment Prerequisites & Config**: Any required environment variables (`.env`), Helm values, Kubernetes Ingress/DNS routing, secrets, and third-party whitelist requirements (e.g. Cloud NAT IP).
-  4. **Rollback & Health Verification Plan**: Post-deploy verification commands, health check endpoints, and clear rollback procedures.
-
-## 📌 Rule 6: Mandatory DB Schema & Field Verification (ต้องตรวจสอบ Field ใน Database ก่อนแก้ไขเสมอ)
+### 📌 Rule 3: Mandatory DB Schema & Field Verification (ต้องตรวจสอบ Field ใน Database ก่อนแก้ไขเสมอ)
 - **Always Verify Column & Table Existence**: Before modifying code, writing SQL queries, updating stored procedures, or creating database migration scripts, the AI agent MUST strictly inspect and confirm that the referenced columns (fields), tables, and data types actually exist in the database schema (via `information_schema.columns`, `pg_attribute`, table DDL, or live schema checks).
 - **No Column Hallucinations or Blind Assumptions**: Never assume or guess field names, table relationships, or column types without verifying against the actual database schema or schema definitions first.
 
-## 📌 Rule 7: Mandatory Output Truncation & Token Optimization (ต้องตัดทอนและกรอง Log เสมอ)
+### 📌 Rule 4: Mandatory Output Truncation & Token Optimization (ต้องตัดทอนและกรอง Log เสมอ)
 - **Always Filter & Limit Command Output**: When executing terminal commands, running tests, checking logs, querying database rows, or viewing files, the AI agent MUST strictly filter, truncate, and limit the output using tools such as `head`, `tail`, `grep`, `LIMIT`, or slicing ranges.
-- **Prevent Context Bloat & Conserve Tokens**: Never dump raw, voluminous outputs (hundreds or thousands of lines of verbose logs/tables) directly into the conversation context. Always extract and display only the relevant summaries, errors, and key data points.
+- **Prevent Context Bloat & Conserve Tokens**: Never dump raw, voluminous outputs directly into the conversation context. Always extract and display only the relevant summaries, errors, and key data points.
 
-## 📌 Rule 8: Mandatory 3-Repository Machine Migration Sync (สำรองข้อมูล 3 Repos สำหรับย้ายเครื่องเสมอ)
+### 📌 Rule 5: Mandatory 3-Repository Machine Migration Sync (สำรองข้อมูล 3 Repos สำหรับย้ายเครื่องเสมอ)
 - **Always Maintain 3-Repo Sync**: When requested to backup, sync, or prepare for machine migration (`sync backup`, `backup ย้ายเครื่อง`, `backup 3 repo`), the AI agent MUST strictly:
   1. Sync deployment jobs: Mirror `/Users/kritsanawathaniyanon/Code/Go/deploy_jobs/` to `/Users/kritsanawathaniyanon/Code/docs/releases/deploy_jobs/`.
   2. Maintain and push all 3 core repositories to GitHub `origin main`:
@@ -42,44 +29,51 @@
      - **`my-engineering-docs`** (`~/Code/docs`)
      - **`my-keystores`** (`~/.keystores`)
   3. Verify all 3 repositories report `working tree clean` and provide updated commit summaries.
-  4. Run `~/.gemini/config/scripts/sync_ai_config.sh` so every AI tool (Antigravity/Gemini, Claude Code, Codex, Cursor) points at the same AGENTS.md and the same skills (on a new machine: after cloning `my-antigravity-skills`).
-- **Skills Live Only Here (Skill อยู่ได้แค่ในเครื่องนี้และ repo เท่านั้น)**: Custom skills exist ONLY in the `my-antigravity-skills` repo and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
-- **Using Skills From Any AI (ใช้ Skill ได้ทุกค่าย)**: If your tool has no native skill support, read `~/.gemini/config/SKILLS_INDEX.md` before starting a task and open the matching `SKILL.md` when a skill applies.
-- **Never Upload Skills or Rules to External Services (ห้ามอัปโหลด Skill/กฎไปยังบริการภายนอก)**: The AI agent MUST NEVER upload, import, or suggest uploading custom skills, AGENTS.md, or memory to any external service (e.g. claude.ai account Skills, cloud skill marketplaces, shared gists). They contain internal hosts, keys, and DB procedures. The ONLY sanctioned way to carry them to another machine is `git clone` of `my-antigravity-skills` + `scripts/sync_ai_config.sh`.
+  4. Run `~/.gemini/config/scripts/sync_ai_config.sh` so every AI tool (Antigravity/Gemini, Claude Code, Codex, Cursor) points at the same AGENTS.md and the same skills.
+- **Skills Live Only Here**: Custom skills exist ONLY in the `my-antigravity-skills` repo and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
+- **Never Upload Skills or Rules to External Services**: The AI agent MUST NEVER upload, import, or suggest uploading custom skills, AGENTS.md, or memory to any external cloud skill marketplaces.
 
-## 📌 Rule 9: Mandatory Dual-Inspection: Code + DB Stored Procedures (ต้องตรวจสอบ Code และ DB Stored Procedure ควบคู่กันเสมอ)
-- **Always Verify Both Application Code & Database Stored Objects**: For every bug fix, enhancement, policy issuance workflow, payment processing, or concurrency handling, the AI agent MUST strictly cross-examine BOTH the application source code (Go/Node.js/Python) and the underlying Database Stored Procedures/Functions/Triggers (e.g. `fn_lead_to_car_act`, `fn_policy_invoiceno_iia`, `fn_policy_renewal`, etc.) in parallel to prevent desynchronization and reduce errors.
-- **Prevent Desynchronization & Logic Blind Spots**:
-  1. Never assume business logic, validation, or safeguards reside solely in application code or solely in database procedures.
-  2. Always verify parameter signatures, data type mappings (e.g. nullable columns to pointer types `*string`), advisory locks, transaction isolation, and return contracts between the application caller and the DB callee before implementing changes.
-  3. Ensure that any modification to application code preserves constraints expected by DB functions, and any modification to DB functions maintains full compatibility with all calling services.
+### 📌 Rule 6: Safe Git Operations & Explicit Branching (แตก Branch จาก origin/main และใช้ --no-track เสมอ)
+- **Branch from `origin/main` Only**: Every new branch MUST be created from `origin/main` with explicit `--no-track` (e.g. `git checkout --no-track -b <branch_name> origin/main`). The AI agent MUST NEVER allow Git to automatically attach upstream tracking to `main`.
+- **Verify Clean Local Branch**: After creating a branch, always verify with `git branch -vv` that the newly created branch has NO upstream tracking bracket pointing to `main`.
 
-## 📌 Rule 10: Push Feature Branches Only — Never Auto-Merge into Main & No Tracking from Main (Push ได้ แต่ห้าม Auto Merge เข้า main และต้องใช้ --no-track เสมอ)
-- **Push Allowed to Feature Branches (Push ได้เฉพาะ Branch งานของตัวเอง)**: The AI agent MAY `git push` to a project codebase or microservice repository (GitLab / GitHub), but ONLY to its own feature/fix branch with an explicit refspec (e.g. `git push origin fix/fx-01-isv-test`). Before pushing, verify the target branch is NOT `main`.
-- **Never Merge or Auto-Merge into Main (ห้าม Merge / Auto Merge เข้า main ทุกกรณี)**: The AI agent MUST NEVER:
-  1. Push directly to `main` (e.g. `git push origin main`, `git push origin HEAD:main`).
-  2. Run `git merge` / `git rebase` onto local `main` followed by a push, or force-push (`--force`, `--force-with-lease`) to any shared branch.
-  3. Enable auto-merge on any MR/PR targeting `main` (e.g. `-o merge_request.merge_when_pipeline_succeeds`, `-o merge_request.target=main` combined with auto-merge, `glab mr merge`, `gh pr merge --auto`, "Merge when pipeline succeeds").
-  - Merging into `main` is done **only by a human** via GitLab/GitHub MR review.
-- **Branch from `origin/main` Only (แตก Branch จาก origin/main เท่านั้น ไม่มีข้อยกเว้น)**: Every new branch MUST be created from `origin/main` — never from `uat-isv`, `dev`, `uat`, or any feature/hotfix branch. Name fix branches `fix/fx-01-<service>` (one per service; continue on it if it already exists).
-  - If the code to fix does not exist on `main` yet (e.g. it lives only on `dev` or a feature branch), the AI agent MUST NOT create a branch for it. Instead, produce a patch file (`git format-patch`) and hand it to the branch owner to apply.
-  - To test on UAT-ISV, merge in one direction only: work branch → `uat-isv`. Never merge `uat-isv` (or `dev`) back into a work branch.
-- **Mandatory `--no-track` When Branching (ต้องใส่ --no-track เสมอเมื่อแตก Branch จาก main)**: Whenever creating a new branch from `origin/main`, the AI agent MUST strictly use the `--no-track` flag (e.g. `git checkout --no-track -b <branch_name> origin/main`). The AI agent MUST NEVER allow Git to automatically attach upstream tracking (`branch.<name>.merge = refs/heads/main`), preventing accidental pushes or auto-merge routing into production `main`.
-- **Verify Clean Local Branch (ตรวจสอบสถานะ Branch บริสุทธิ์เสมอ)**: After creating a branch, always verify with `git branch -vv` that the newly created branch has NO upstream tracking bracket (`[origin/...]`) pointing to `main`.
+### 📌 Rule 7: Multi-LLM Universal Handover Protocol (มาตรฐานการส่งต่องานระหว่าง AI)
+- Follow the `multi-llm-collaboration` protocol when switching between Gemini, Claude, Cursor, and Codex:
+  1. Ensure latest changes are committed locally or summarized in `implementation_plan.md`.
+  2. Do not copy raw chat transcripts; use standard structured handovers.
+  3. Point the destination model to `AGENTS.md` (or symlinked `CLAUDE.md`) and the relevant operational skill.
 
+---
 
-## 📌 Rule 11: Mandatory Spec Sync After Code Changes (แก้ Code ต้องอัปเดต Spec เสมอ)
-- **Always Update Specs With the Change**: Whenever the AI agent modifies routes, handlers, request/response DTOs, validation, middleware/auth, SQL, tables/columns used, or stored functions in any service under `~/Code/Go` or app under `~/Code/NextJs`, it MUST update the matching docs in `~/Code/docs` in the same piece of work, following the `api-spec-sync` skill:
-  - `architecture/api_specs/<service>.md` and the index `architecture/api_specs/README.md` (services table, Service × DB matrix, security table)
-  - `architecture/nextjs_specs/<app>.md` when a frontend-facing contract changes
-  - `database/schema_spec/functions_and_triggers.md` when a stored function changes (after the Rule 3 backup)
-- **Mention It in the MR**: State in the MR description which spec files were updated. For a pure refactor with no contract change, say explicitly that no spec update is needed.
-- **Never Write Secrets Into Docs**: Record environment variable NAMES only, never secret values.
+## 🏢 PART B: Enterprise InsurTech Rules (ใช้เฉพาะงานบริษัท Horixon-T8 / InsurVerse)
+> **Full Spec:** Read [`rules/insurtech_rules.md`](rules/insurtech_rules.md) for complete details.
+> **Scope:** Applicable under `~/Code/Go/*`, `~/Code/NextJs/*`, and `~/Code/docs/*`.
+> **Identity:** `kritsana.w.os@horixon-t8.com`
 
-## 📌 Rule 12: Environment Scope & Safety (ใช้ได้เฉพาะ UAT-ISV — ห้ามแตะ UAT / Production)
-- **UAT-ISV Only**: The ONLY environment the AI agent may act on (deploy/merge target, DB access, API tests) is **UAT-ISV**. See the `uat-isv-infra-devops` skill for DB connection details.
-- **Never Touch Production**: No Prod DB access, deploys, or config changes. Production packs (Rule 5) are prepared for humans to run.
-- **Never Touch UAT**: No merge, push, deploy, DB access, or branch cleanup on the `uat` environment / `uat` branch / `*-uat` branches, unless the user gives a new explicit instruction. Reading git history that mentions `uat` for context is fine.
-- **`main` Is Git Base Only**: Branch from `origin/main` and target MRs at it (Rule 10); merging is done by a human.
-- **E2E Payments via Real Sandbox Links**: For tests needing a payment, create the payment via the API and send the user the 2C2P **sandbox** `webPaymentUrl` to pay with the 2C2P test card; watch `insurverse.payment` / `payment_callback` for the real callback. The AI MUST NOT sign or fake payment callbacks itself, nor read the K8s `2c2p` secret.
-- **nextjs-backoffice-webapp — No CI Trigger**: Never trigger a GitLab CI pipeline (no `git push` to `uat-isv` or other branches) for this repo; its CI can deploy to Cloudflare unintentionally. Deploy to Cloud Run only via the local `deploy.sh`. Keep changes local unless the user explicitly asks to push, and warn about CI first.
+- **Rule I-1: Mandatory DB Stored Object Backup**: Before modifying DB functions (`CREATE OR REPLACE`), extract existing definitions into a timestamped backup SQL file.
+- **Rule I-2: Mandatory Test Citizen ID**: Strictly use `1111111111119` (Mr. Kritsana Watthaniyanon, Saraburi address) for all test insurance issuances.
+- **Rule I-3: Mandatory Production Deployment Pack**: Prepare Git readiness, dynamic sequence `setval`, minimal safe DDL/DML, and rollback plans before prod deploys.
+- **Rule I-4: Mandatory Dual-Inspection**: Cross-examine Go/Node application code and PostgreSQL stored procedures (`fn_lead_to_car_act`, etc.) in parallel.
+- **Rule I-5: Push Feature Branches Only**: May push to `fix/fx-01-...` with explicit refspec; NEVER push directly to `main` and NEVER enable auto-merge. Merging into `main` is done only by a human.
+- **Rule I-6: Mandatory Spec Sync**: Always update API specs in `~/Code/docs/architecture/api_specs/` whenever endpoints, handlers, DTOs, or DB tables change.
+- **Rule I-7: Environment Scope & Safety**: Act ONLY on **UAT-ISV** (`136.85.102.224`). NEVER touch UAT or Production. E2E payments via real 2C2P sandbox links. Never trigger CI for `nextjs-backoffice-webapp`.
+
+---
+
+## 💻 PART C: Personal & Independent SaaS Rules (งานส่วนตัว)
+
+### 📋 ImmiSync SaaS (`~/Documents/Code/immisync`)
+> **Full Spec:** Read [`rules/immisync_rules.md`](rules/immisync_rules.md) and skill `immisync-operations`.
+> **Identity:** KritsanaDK (`kritsana.dk@gmail.com`)
+- Enforce mandatory Primary Tenant Owner with randomized passwords and clipboard copy.
+- Enforce standardized 8-field Thai address with office address inheritance toggle.
+- Maintain foreign labor compliance document integrity (Passport, Visa, Work Permit, Pink Card, TM30, TM47) with ID reuse on upsert.
+- White-label LINE Official Account Messaging API integration per tenant.
+- Direct push to personal GitHub (`KritsanaDK/*`) `main` is permitted when requested by the owner.
+
+### 📱 Mobile & Flutter (`~/Documents/flutter/*`)
+> **Full Spec:** Read [`rules/mobile_flutter_rules.md`](rules/mobile_flutter_rules.md) and skill `wvocs-flutter-operations`.
+> **Identity:** KritsanaDK (`kritsana.dk@gmail.com`)
+- Strict OpenJDK 17 LTS toolchain for Flutter/Gradle builds.
+- Automated versioning and build management with `./build.sh`.
+- Clean architecture: decouple UI overlays from Providers.
