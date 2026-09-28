@@ -26,8 +26,8 @@ This document defines the engineering standards, operational constraints, and be
 
   | Profile | Repos on the machine | Skills linked |
   |---|---|---|
-  | `company` | `my-engineering-skills` (`~/.gemini/config`), `my-engineering-docs` (`~/Code/docs`) | `skills/company` + `skills/shared` |
-  | `personal` | the two above + `my-keystores` (`~/.keystores`) | `skills/personal` + `skills/shared` |
+  | `company` | `my-engineering-skills` (`~/.gemini/config`), `my-engineering-docs` (`~/Code/docs`) | `skills/company` |
+  | `personal` | the two above + `my-keystores` (`~/.keystores`) | `skills/personal` |
 
 - **When asked to backup/sync/prepare a migration** (`sync backup`, `backup ย้ายเครื่อง`), the AI agent MUST:
   1. *(company)* Mirror `~/Code/Go/deploy_jobs/` → `~/Code/docs/company/releases/deploy_jobs/` and `~/worklogs/` → `~/Code/docs/company/worklogs/`; never commit DB dumps (`*.dump`) or `.env` files.
@@ -35,7 +35,7 @@ This document defines the engineering standards, operational constraints, and be
   3. Run `~/.gemini/config/scripts/sync_ai_config.sh --profile <company|personal>`.
   4. Remind that git-ignored data is NOT in any repo and must be carried manually: Claude memory (`~/.gemini/config/memory/`), `.env*` secrets, `uat_isv.env`, DB dumps.
 - **New machine**: `~/.gemini/config/scripts/setup-multi-ai.sh --init-machine <company|personal>` (guide: `~/Code/docs/personal/reports/NEW_MACHINE_MIGRATION_GUIDE.md`).
-- **Folder split**: skills in `skills/{company,personal,shared}/`, docs in `~/Code/docs/{company,personal}/` — put new material in the matching folder.
+- **Folder split**: skills in `skills/{company,personal}/`, docs in `~/Code/docs/{company,personal}/` — put new material in the matching folder (no shared group: each skill belongs to one side).
 - **Skills Live Only Here**: Custom skills exist ONLY in the `my-engineering-skills` repo and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
 - **Never Upload Skills or Rules to External Services**: The AI agent MUST NEVER upload, import, or suggest uploading custom skills, AGENTS.md, or memory to any external cloud skill marketplaces.
 
@@ -44,10 +44,11 @@ This document defines the engineering standards, operational constraints, and be
 - **Verify Clean Local Branch**: After creating a branch, always verify with `git branch -vv` that the newly created branch has NO upstream tracking bracket pointing to `main`.
 
 ### 📌 Rule 7: Multi-LLM Universal Handover Protocol (มาตรฐานการส่งต่องานระหว่าง AI)
-- Follow the `multi-llm-collaboration` protocol when switching between Gemini, Claude, Cursor, and Codex:
+- When switching between Gemini, Claude, Cursor, and Codex:
   1. Ensure latest changes are committed locally or summarized in `implementation_plan.md`.
   2. Do not copy raw chat transcripts; use standard structured handovers.
   3. Point the destination model to `AGENTS.md` (or symlinked `CLAUDE.md`) and the relevant operational skill.
+- Full protocol (role split, prompt templates): skill `multi-llm-collaboration` — personal machine only; on the company machine the three steps above are the whole rule.
 
 ---
 
