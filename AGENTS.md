@@ -23,7 +23,7 @@ This document defines the engineering standards, operational constraints, and be
 
 ### 📌 Rule 5: Mandatory 3-Repository Machine Migration Sync (สำรองข้อมูล 3 Repos สำหรับย้ายเครื่องเสมอ)
 - **Always Maintain 3-Repo Sync**: When requested to backup, sync, or prepare for machine migration (`sync backup`, `backup ย้ายเครื่อง`, `backup 3 repo`), the AI agent MUST strictly:
-  1. Sync deployment jobs: Mirror `/Users/kritsanawathaniyanon/Code/Go/deploy_jobs/` to `/Users/kritsanawathaniyanon/Code/docs/releases/deploy_jobs/`.
+  1. Sync deployment jobs: Mirror `/Users/kritsanawathaniyanon/Code/Go/deploy_jobs/` to `/Users/kritsanawathaniyanon/Code/docs/company/releases/deploy_jobs/`.
   2. Maintain and push all 3 core repositories to GitHub `origin main`:
      - **`my-antigravity-skills`** (`~/.gemini/config`)
      - **`my-engineering-docs`** (`~/Code/docs`)
@@ -55,7 +55,7 @@ This document defines the engineering standards, operational constraints, and be
 - **Rule I-3: Mandatory Production Deployment Pack**: Prepare Git readiness, dynamic sequence `setval`, minimal safe DDL/DML, and rollback plans before prod deploys.
 - **Rule I-4: Mandatory Dual-Inspection**: Cross-examine Go/Node application code and PostgreSQL stored procedures (`fn_lead_to_car_act`, etc.) in parallel.
 - **Rule I-5: Push Feature Branches Only**: May push to `fix/fx-01-...` with explicit refspec; NEVER push directly to `main` and NEVER enable auto-merge. Merging into `main` is done only by a human.
-- **Rule I-6: Mandatory Spec Sync**: Always update API specs in `~/Code/docs/architecture/api_specs/` whenever endpoints, handlers, DTOs, or DB tables change.
+- **Rule I-6: Mandatory Spec Sync**: Always update API specs in `~/Code/docs/company/architecture/api_specs/` whenever endpoints, handlers, DTOs, or DB tables change.
 - **Rule I-7: Environment Scope & Safety**: Act ONLY on **UAT-ISV** (`136.85.102.224`). NEVER touch UAT or Production. E2E payments via real 2C2P sandbox links. Never trigger CI for `nextjs-backoffice-webapp`.
 
 ---

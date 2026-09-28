@@ -164,4 +164,4 @@ func (r SFBaseResponse) GetTime() string {
 * ค้นหา Record เดิมใน Database/Salesforce ก่อน หากมีอยู่แล้วให้แนบ `leadID` หรือ `accountID` ไปด้วยเสมอ เพื่อบังคับให้ Salesforce ทำงานในโหมด Update แทนการ Insert
 
 ---
-*เอกสารนี้ได้รับการบันทึกเข้าคลัง `Code/docs/architecture/` สำหรับเป็นมาตรฐานการพัฒนาและแก้ Bug ระบบร่วมกับ Salesforce*
+*เอกสารนี้ได้รับการบันทึกเข้าคลัง `Code/docs/company/architecture/` สำหรับเป็นมาตรฐานการพัฒนาและแก้ Bug ระบบร่วมกับ Salesforce*

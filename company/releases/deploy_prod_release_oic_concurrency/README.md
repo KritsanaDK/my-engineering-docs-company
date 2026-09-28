@@ -38,7 +38,7 @@
 ### ขั้นตอนที่ 1: สำรองข้อมูลเดิมบน Production Database
 รันสคริปต์ Backup เพื่อบันทึกคำนิยามเดิมของทั้ง 4 Functions:
 ```bash
-cd /Users/kritsanawathaniyanon/Code/docs/releases/deploy_prod_release_oic_concurrency
+cd /Users/kritsanawathaniyanon/Code/docs/company/releases/deploy_prod_release_oic_concurrency
 
 # กำหนดค่า Connection String ไปยัง Production Database
 export DB_HOST="<PROD_DB_HOST>"
