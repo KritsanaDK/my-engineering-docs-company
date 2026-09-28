@@ -25,12 +25,12 @@ This document defines the engineering standards, operational constraints, and be
 - **Always Maintain 3-Repo Sync**: When requested to backup, sync, or prepare for machine migration (`sync backup`, `backup ย้ายเครื่อง`, `backup 3 repo`), the AI agent MUST strictly:
   1. Sync deployment jobs: Mirror `/Users/kritsanawathaniyanon/Code/Go/deploy_jobs/` to `/Users/kritsanawathaniyanon/Code/docs/company/releases/deploy_jobs/`.
   2. Maintain and push all 3 core repositories to GitHub `origin main`:
-     - **`my-antigravity-skills`** (`~/.gemini/config`)
+     - **`my-engineering-skills`** (`~/.gemini/config`)
      - **`my-engineering-docs`** (`~/Code/docs`)
      - **`my-keystores`** (`~/.keystores`)
   3. Verify all 3 repositories report `working tree clean` and provide updated commit summaries.
   4. Run `~/.gemini/config/scripts/sync_ai_config.sh` so every AI tool (Antigravity/Gemini, Claude Code, Codex, Cursor) points at the same AGENTS.md and the same skills.
-- **Skills Live Only Here**: Custom skills exist ONLY in the `my-antigravity-skills` repo and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
+- **Skills Live Only Here**: Custom skills exist ONLY in the `my-engineering-skills` repo and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
 - **Never Upload Skills or Rules to External Services**: The AI agent MUST NEVER upload, import, or suggest uploading custom skills, AGENTS.md, or memory to any external cloud skill marketplaces.
 
 ### 📌 Rule 6: Safe Git Operations & Explicit Branching (แตก Branch จาก origin/main และใช้ --no-track เสมอ)
