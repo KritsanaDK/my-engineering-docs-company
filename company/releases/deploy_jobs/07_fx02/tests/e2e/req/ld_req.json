@@ -1,0 +1,75 @@
+{
+  "data": {
+    "homeBuildingTypeId": 1,
+    "homeBuildingProvinceId": 10,
+    "homeMaterialTypeId": 1,
+    "homeResidentTypeId": 1,
+    "coverageMainDetail": {
+      "coverMainSi": 1000000,
+      "flagFurniture": false,
+      "coverFurnitureSi": 0,
+      "coverMainFurnitureSi": 1000000,
+      "coverMainFurniturePrem": 483.00,
+      "coverLossAndDamageSi": 50000.00,
+      "coverLossAndDamagePrem": 175.00,
+      "flagCoverRentalCost": false,
+      "coverGlassSi": 50000.00,
+      "coverGlassPrem": 26.00,
+      "coverMainTotalAmt": 754.00
+    },
+    "coverageAddonDetail": {
+      "flagCoverNaturalDisExFlood": false,
+      "coverNaturalDisExFloodSi": 0,
+      "coverNaturalDisExFloodPrem": 0,
+      "flagCoverFloodDis": false,
+      "coverFloodDisSi": 0,
+      "coverFloodDisPrem": 0,
+      "flagCoverTheft": false,
+      "coverTheftSi": 0,
+      "coverTheftPrem": 0,
+      "flagCoverThirdParties": false,
+      "coverThirdPartiesSi": 0,
+      "coverThirdPartiesPrem": 0,
+      "coverAddonTotalAmt": 0
+    },
+    "productGroupType": "home",
+    "productSubType": "",
+    "discountPer": 0,
+    "discountAmt": 0,
+    "premAmt": 0,
+    "dutyAmt": 0,
+    "vatPer": 7,
+    "vatAmt": 0,
+    "totalAmt": 0,
+    "buildingAddressDetail": {
+      "buildingAddressTh": "1 หมู่ 1",
+      "buildingDistrictId": 124,
+      "buildingSubdistrictId": 979,
+      "buildingProvinceId": 10,
+      "buildingCountryId": 1,
+      "buildingZipcode": "18110"
+    },
+    "policyStartdate": "2026-09-25",
+    "policyEnddate": "2027-09-24",
+    "ownerDetails": {
+      "ownerTitleTh": "นาย",
+      "ownerFirstnameTh": "กฤษณะ",
+      "ownerLastnameTh": "วัฒนายนนต์",
+      "ownerCardType": "I",
+      "ownerCardId": "1111111111119",
+      "ownerAddressTh": "1 หมู่ 1",
+      "ownerDistrictId": 124,
+      "ownerSubdistrictId": 979,
+      "ownerProvinceId": 10,
+      "ownerCountryId": 1,
+      "ownerZipcode": "18110",
+      "ownerPhone": "0628696603",
+      "ownerEmail": "kritsana.w.os+e2ehome152957@horixon-t8.com",
+      "ownerBirthdate": "1990-01-01"
+    },
+    "beneDetails": {
+      "beneType": 1
+    },
+    "deliFlag": false
+  }
+}

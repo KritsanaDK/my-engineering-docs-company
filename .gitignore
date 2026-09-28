@@ -4,3 +4,4 @@
 terraform-provider-*
 *.tar.gz
 skills_backup/
+*.dump

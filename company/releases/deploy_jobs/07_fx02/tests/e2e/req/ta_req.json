@@ -1,0 +1,42 @@
+{
+  "data": {
+    "taPackageId": 1,
+    "taTravelTypeId": 1,
+    "countryMainId": 13,
+    "countryIdArray": "13",
+    "policyStartdate": "2026-10-01",
+    "policyEnddate": "2026-10-07",
+    "email": "kritsana.w.os+full-ta163605@horixon-t8.com",
+    "totalAmt": 79.18,
+    "taPackageTotalAmt": 79.18,
+    "addonPackageTotalAmt": 0,
+    "addonPackageDetails": [],
+    "productGroupType": "ta",
+    "ownerDetails": [
+      {
+        "ownerTitleEn": "MR",
+        "ownerFirstnameEn": "KRITSANA",
+        "ownerLastnameEn": "WATTHANIYANON",
+        "flagRefInfoBuyer": true,
+        "flagRefEmailBuyer": true,
+        "ownerIndex": 1,
+        "ownerCardType": "I",
+        "ownerCardId": "1111111111119",
+        "ownerAddressEn": "1 Moo 1",
+        "ownerDistrictId": 124,
+        "ownerSubdistrictId": 979,
+        "ownerProvinceId": 10,
+        "ownerCountryId": 1,
+        "ownerZipcode": "18110",
+        "ownerPhone": "0628696603",
+        "ownerEmail": "kritsana.w.os+full-ta163605@horixon-t8.com",
+        "ownerBirthdate": "1990-01-01",
+        "beneDetails": {
+          "beneType": 1
+        }
+      }
+    ],
+    "deliFlag": false,
+    "totalInsuredPersons": 1
+  }
+}

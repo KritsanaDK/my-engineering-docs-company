@@ -1,0 +1,43 @@
+run 201011931: 3 requests in 0.4s, 200 with leadNo: 3
+PASS
+run 201014937: 3 requests in 0.2s, 200 with leadNo: 3
+PASS
+run 201017942: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201019971: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201022977: 3 requests in 0.2s, 200 with leadNo: 3
+PASS
+run 201024982: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201027011: 3 requests in 0.2s, 200 with leadNo: 2
+  FAIL 0 503 {'code': 9100, 'header': 'API Error', 'description': 'API, System Fail Error'}
+FAIL
+run 201029016: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201032022: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201034030: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201037035: 3 requests in 0.2s, 200 with leadNo: 3
+PASS
+run 201039042: 3 requests in 0.2s, 200 with leadNo: 3
+PASS
+run 201042047: 3 requests in 0.2s, 200 with leadNo: 3
+PASS
+run 201044052: 3 requests in 0.2s, 200 with leadNo: 3
+PASS
+run 201047057: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201049078: 3 requests in 0.2s, 200 with leadNo: 2
+  FAIL 2 503 {'code': 9100, 'header': 'API Error', 'description': 'API, System Fail Error'}
+FAIL
+run 201052083: 3 requests in 0.2s, 200 with leadNo: 2
+  FAIL 0 503 {'code': 9100, 'header': 'API Error', 'description': 'API, System Fail Error'}
+FAIL
+run 201054088: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201057109: 3 requests in 0.3s, 200 with leadNo: 3
+PASS
+run 201059114: 3 requests in 0.2s, 200 with leadNo: 3
+PASS

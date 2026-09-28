@@ -1,0 +1,64 @@
+{
+  "data": {
+    "paAgeRangeId": 2,
+    "paOccupationId": 1,
+    "paPackageId": 1,
+    "coverageDetails": [
+      {
+        "paCoverageId": 1,
+        "coverageSi": 1500000.0000,
+        "coveragePrem": 3438.0000
+      },
+      {
+        "paCoverageId": 3,
+        "coverageSi": 200000.0000,
+        "coveragePrem": 4289.7000
+      },
+      {
+        "paCoverageId": 4,
+        "coverageSi": 0.0000,
+        "coveragePrem": 0.0000
+      },
+      {
+        "paCoverageId": 5,
+        "coverageSi": 0.0000,
+        "coveragePrem": 0.0000
+      }
+    ],
+    "taxDeductions": true,
+    "policyStartdate": "2026-09-25",
+    "policyEnddate": "2027-09-24",
+    "email": "kritsana.w.os+e2epa152907@horixon-t8.com",
+    "productGroupType": "pa",
+    "productSubType": "",
+    "discountPer": 0,
+    "discountAmt": 0,
+    "premAmt": 7727.7,
+    "dutyAmt": 1,
+    "totalAmt": 7728.7,
+    "ownerDetails": [
+      {
+        "ownerTitleTh": "นาย",
+        "ownerFirstnameTh": "กฤษณะ",
+        "ownerLastnameTh": "วัฒนายนนต์",
+        "ownerCardType": "I",
+        "ownerCardId": "1111111111119",
+        "ownerAddressTh": "1 หมู่ 1",
+        "ownerDistrictId": 124,
+        "ownerSubdistrictId": 979,
+        "ownerProvinceId": 10,
+        "ownerCountryId": 1,
+        "ownerZipcode": "18110",
+        "ownerPhone": "0628696603",
+        "ownerEmail": "kritsana.w.os+e2epa152907@horixon-t8.com",
+        "ownerBirthdate": "1990-01-01"
+      }
+    ],
+    "beneDetails": [
+      {
+        "beneType": 1
+      }
+    ],
+    "deliFlag": false
+  }
+}
