@@ -21,15 +21,21 @@ This document defines the engineering standards, operational constraints, and be
 - **Always Filter & Limit Command Output**: When executing terminal commands, running tests, checking logs, querying database rows, or viewing files, the AI agent MUST strictly filter, truncate, and limit the output using tools such as `head`, `tail`, `grep`, `LIMIT`, or slicing ranges.
 - **Prevent Context Bloat & Conserve Tokens**: Never dump raw, voluminous outputs directly into the conversation context. Always extract and display only the relevant summaries, errors, and key data points.
 
-### 📌 Rule 5: Mandatory 3-Repository Machine Migration Sync (สำรองข้อมูล 3 Repos สำหรับย้ายเครื่องเสมอ)
-- **Always Maintain 3-Repo Sync**: When requested to backup, sync, or prepare for machine migration (`sync backup`, `backup ย้ายเครื่อง`, `backup 3 repo`), the AI agent MUST strictly:
-  1. Sync deployment jobs: Mirror `/Users/kritsanawathaniyanon/Code/Go/deploy_jobs/` to `/Users/kritsanawathaniyanon/Code/docs/company/releases/deploy_jobs/`.
-  2. Maintain and push all 3 core repositories to GitHub `origin main`:
-     - **`my-engineering-skills`** (`~/.gemini/config`)
-     - **`my-engineering-docs`** (`~/Code/docs`)
-     - **`my-keystores`** (`~/.keystores`)
-  3. Verify all 3 repositories report `working tree clean` and provide updated commit summaries.
-  4. Run `~/.gemini/config/scripts/sync_ai_config.sh` so every AI tool (Antigravity/Gemini, Claude Code, Codex, Cursor) points at the same AGENTS.md and the same skills.
+### 📌 Rule 5: Machine Sync by Profile — Company vs Personal (สำรอง/ย้ายเครื่องแยกตาม profile)
+- **Two machine profiles** (`~/.gemini/sync_profile`): **company** machine = company work only; **personal** machine = personal work. Never put personal projects or `my-keystores` on the company machine.
+
+  | Profile | Repos on the machine | Skills linked |
+  |---|---|---|
+  | `company` | `my-engineering-skills` (`~/.gemini/config`), `my-engineering-docs` (`~/Code/docs`) | `skills/company` + `skills/shared` |
+  | `personal` | the two above + `my-keystores` (`~/.keystores`) | `skills/personal` + `skills/shared` |
+
+- **When asked to backup/sync/prepare a migration** (`sync backup`, `backup ย้ายเครื่อง`), the AI agent MUST:
+  1. *(company)* Mirror `~/Code/Go/deploy_jobs/` → `~/Code/docs/company/releases/deploy_jobs/` and `~/worklogs/` → `~/Code/docs/company/worklogs/`; never commit DB dumps (`*.dump`) or `.env` files.
+  2. Push the profile's repos to GitHub `origin main` and verify each reports `working tree clean`, with a commit summary.
+  3. Run `~/.gemini/config/scripts/sync_ai_config.sh --profile <company|personal>`.
+  4. Remind that git-ignored data is NOT in any repo and must be carried manually: Claude memory (`~/.gemini/config/memory/`), `.env*` secrets, `uat_isv.env`, DB dumps.
+- **New machine**: `~/.gemini/config/scripts/setup-multi-ai.sh --init-machine <company|personal>` (guide: `~/Code/docs/personal/reports/NEW_MACHINE_MIGRATION_GUIDE.md`).
+- **Folder split**: skills in `skills/{company,personal,shared}/`, docs in `~/Code/docs/{company,personal}/` — put new material in the matching folder.
 - **Skills Live Only Here**: Custom skills exist ONLY in the `my-engineering-skills` repo and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
 - **Never Upload Skills or Rules to External Services**: The AI agent MUST NEVER upload, import, or suggest uploading custom skills, AGENTS.md, or memory to any external cloud skill marketplaces.
 
@@ -47,7 +53,7 @@ This document defines the engineering standards, operational constraints, and be
 
 ## 🏢 PART B: Enterprise InsurTech Rules (ใช้เฉพาะงานบริษัท Horixon-T8 / InsurVerse)
 > **Full Spec:** Read [`rules/insurtech_rules.md`](rules/insurtech_rules.md) for complete details.
-> **Scope:** Applicable under `~/Code/Go/*`, `~/Code/NextJs/*`, and `~/Code/docs/*`.
+> **Scope:** Applicable under `~/Code/Go/*`, `~/Code/NextJs/*`, and `~/Code/docs/company/*`.
 > **Identity:** `kritsana.w.os@horixon-t8.com`
 
 - **Rule I-1: Mandatory DB Stored Object Backup**: Before modifying DB functions (`CREATE OR REPLACE`), extract existing definitions into a timestamped backup SQL file.
@@ -62,7 +68,7 @@ This document defines the engineering standards, operational constraints, and be
 
 ## 💻 PART C: Personal & Independent SaaS Rules (งานส่วนตัว)
 
-### 📋 ImmiSync SaaS (`~/Documents/Code/immisync`)
+### 📋 ImmiSync SaaS (`~/Code/immisync`)
 > **Full Spec:** Read [`rules/immisync_rules.md`](rules/immisync_rules.md) and skill `immisync-operations`.
 > **Identity:** KritsanaDK (`kritsana.dk@gmail.com`)
 - Enforce mandatory Primary Tenant Owner with randomized passwords and clipboard copy.
@@ -71,7 +77,7 @@ This document defines the engineering standards, operational constraints, and be
 - White-label LINE Official Account Messaging API integration per tenant.
 - Direct push to personal GitHub (`KritsanaDK/*`) `main` is permitted when requested by the owner.
 
-### 📱 Mobile & Flutter (`~/Documents/flutter/*`)
+### 📱 Mobile & Flutter (`~/Code/Flutter/*`)
 > **Full Spec:** Read [`rules/mobile_flutter_rules.md`](rules/mobile_flutter_rules.md) and skill `wvocs-flutter-operations`.
 > **Identity:** KritsanaDK (`kritsana.dk@gmail.com`)
 - Strict OpenJDK 17 LTS toolchain for Flutter/Gradle builds.
