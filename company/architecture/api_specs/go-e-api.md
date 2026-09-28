@@ -1,6 +1,7 @@
 # go-e-api — API Spec
 
 > Source: `/Users/kritsanawathaniyanon/Code/Go/go-e-api` (module `go-eapi`). Every route below comes from route-registration code (`internal/*/server.go` + `RegisterRoutes`). Written from a read-only review on 2026-09-23.
+> FX-02 (2026-09-24): branch `fix/fx-02-e-api` — non-JSON ISV reply errors; `PUT /lead/motor` `si*Ans` example corrected (SEQ numbers); `isvregisterauto` note on the UAM response change.
 
 ## Overview
 
@@ -47,6 +48,8 @@ All calls go to **ISV** (Insurverse internal services) over HTTP. The shared cli
 | `ISV_ENDPOINT_CONSENT` (+ suffixes) | `/api/v1/consent` | agreement/* (`/access/website-purchase`, `/purpose`, `/purpose/payment`, `/consent-receipt-group`, `/consent-receipt/payment-group`) |
 | `ISV_ENDPOINT_COMP_PREMIUM` (GET) | `/api/v1/motor/comp-premium` | **Self-call** from lead comp-motor save back to this service's own `/api/v1/motor/comp-premium` (through `ISV_HOST`), forwarding the partner's `Authorization` header |
 | `ISV_ENDPOINT_GET_POLICY` | `/api/v1/core/get-policy` | Declared but **not used** (my-policy reads the DB directly) |
+
+FX-02 (2026-09-24): the lead (`internal/lead/repository` `fetchPost`) and motor (`internal/motor/repository` `fetchGet` / `fetchPost`) ISV clients check the reply with `json.Valid`; a non-JSON body (e.g. a gateway/WAF HTML page) now returns the error `[<url>] HTTP <status> non-JSON response: <first 200 chars>...` instead of a later `invalid character '<'` decode error. The error goes through the existing error paths (see each endpoint's Errors; exact code mapping for this case ⚠️ unverified); the main gain is a clearer error text.
 
 ### Background jobs / queues
 - There are no cron jobs, queues or consumers.
@@ -207,8 +210,8 @@ None of the motor endpoints use the DB directly (except the request log).
   "firstName": "กฤษณะ", "lastName": "วัฒนายนนต์", "mobile": "0628696603",
   "brand": "TOYOTA", "model": "YARIS", "year": "2023", "doors": 4,
   "policyType": "1", "garageType": "G",
-  "cc": "1200", "siAns": 300000, "siTpbiPAns": 1000000, "siTppdAns": 1000000,
-  "siMv01Ans": 100000, "siMv02Ans": 100000, "siMv03Ans": 200000, "siAccessAns": null,
+  "cc": "1200", "siAns": 1, "siTpbiPAns": 1, "siTppdAns": 1,
+  "siMv01Ans": 1, "siMv02Ans": 1, "siMv03Ans": 1, "siAccessAns": null,
   "flagCctv": "N", "flagCarAct": "Y", "flagAccess": "N",
   "parCitizenId1": "1111111111119", "parDriverLicenseNo1": "12345678", "driverBehaviorConsent1": true,
   "driverBehavior1": 1, "driverBehaviorCal": 0,
@@ -226,7 +229,8 @@ None of the motor endpoints use the DB directly (except the request log).
 | doors | int | yes | gt=0 |
 | policyType | string | yes | oneof `1`, `2+`, `3+`, `3` |
 | garageType | string | yes | oneof `G`, `SC` |
-| wg, usage, siAns, siTpbiPAns, siTppdAns, siMv01Ans, siMv02Ans, siMv03Ans, siAccessAns, scPremiumAmtAns, driverBehavior1..5, driverBehaviorCal | int or null | no | none |
+| siAns, siTpbiPAns, siTppdAns, siMv01Ans, siMv02Ans, siMv03Ans | int or null | no | none. **Option SEQ number (1..n) of the chosen sum-insured option from the `loadPremium` / GET `/motor/premium` result — not an amount.** The premium service resolves the amount as `SI_<n>` / `SI_TPBI_<n>` / `SI_TPPD_<n>` / `SI_MV01_<n>`..`SI_MV03_<n>` of the premium row (`nodejs-express-premium-service` `premium.controller.js`) (FX-02 (2026-09-24) doc fix: the old example `"siAns": 300000` was wrong) |
+| wg, usage, siAccessAns, scPremiumAmtAns, driverBehavior1..5, driverBehaviorCal | int or null | no | none |
 | group, cc, promoCode, affiliateSource, affiliateCode, referalSource, referalCode | string or null | no | none |
 | flagCctv, flagCarAct, flagAccess | string | no | Normalised by `checkFlag` |
 | parCitizenId1..5, parDriverLicenseNo1..5 | string or null | no | none |
@@ -493,6 +497,7 @@ None of the motor endpoints use the DB directly (except the request log).
 - **Success 200**: `{"status":{"code":1000,"header":"Success","description":"Success"}}`
 - **Errors**: 422 with code 3000 for a parse error; 400 with code 3000 for a validation error; **500** with code 8888 (header = the HTTP status text of the ISV error, description = the ISV `title`).
 - ⚠️ If ISV returns HTTP < 400 but a body `status` ≥ 400, then `err` is nil and `err.Error()` panics. The recover middleware turns this into a 500.
+- FX-02 (2026-09-24), downstream effect of `go-echo-uam-service` `fix/fx-02-uam`: UAM now answers **200** (`result.is_new_account:false`) for an e-mail that already exists (was 500), so this route returns **200 Success** for an existing e-mail instead of 500 / 8888. `is_new_account` is not passed through in this route's response. No code change in go-e-api for this.
 - **Outbound**: POST `ISV_ENDPOINT_UAM_REGISTER_ACCOUNT` (with the cookie token). Sent as `{email, first_name, last_name, mobile, occupation, occupationCode}`.
 
 #### 22. GET `/api/v1/user/occupation`

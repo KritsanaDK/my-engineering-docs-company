@@ -3,6 +3,7 @@
 > Source: `/Users/kritsanawathaniyanon/Code/Go/go-echo-uam-service` (Go module `insurverse_uam`).
 > Generated from route registration (`main.go`, `router/router.go`) and handler code in `controllers/`. `docs/docs.go` / `swagger/docs.go` were not used as a source of truth.
 > Spec date: 2026-09-23. Read-only analysis; nothing was executed.
+> FX-02 (2026-09-24): updated from branch `fix/fx-02-uam` — `registeraccount_email_auto` response, `ocr_passport_reader_service` error body, CMI realtime pre-send validation (7 OIC fields), DB pool env vars, in-cluster `Backend_Notification` (helm-prod), SF account `mobilePhone` fallback.
 
 ---
 
@@ -14,7 +15,7 @@
 | Framework | Go 1.22 + Echo v4.11.1, `sqlx` + `lib/pq` (PostgreSQL). Raw SQL only. Firebase Admin SDK (SSO ID-token check), GCS (`cloud.google.com/go/storage`), reCAPTCHA Enterprise client. |
 | Port | `HTTP_PORT` env (default `8080`). Helm `containerPort: 8080`. |
 | Base path | `/api/v1/uam/` (`constant.API_V_SERVICE`). One route is registered **without** `api/`: `/v1/uam/decrypt_lead_no` (Echo adds the leading `/`). `/healthcheck` is at the root. |
-| DB schema | `insurverse` (PostgreSQL). `Login` also reads `public.users`. Pool: max open 80, max idle 10. |
+| DB schema | `insurverse` (PostgreSQL). `Login` also reads `public.users`. Pool: max open 80, max idle 10 (FX-02: overridable via `DB_MAX_*` / `DB_CONN_*` env vars, see below). |
 | Response envelope | Mostly `models.JsonReturn` → `{ "title": string, "status": int, "description": string, "result": any }`. Salesforce-style replies use `JsonReturn_SF` (`timeStamp, statuscode, message, accountId, policyNumber, fileId …`). Some errors are plain text (`c.String`) or `{"error": "..."}` (JWT middleware). |
 | Startup | `recaptchaenterprise.NewClient(key.json)` (fatal on error) → `constant.Load_Env()` → `PostgresConn` → `GCPConnect` (`key.json`) → `FirebaseConnect` → `SalesforceConn` (token fetched with retry) → routes. |
 
@@ -22,6 +23,8 @@
 
 Read by `constant.Load_Env()` (`ENV` = `LOCAL` or empty → loads `local.env`; `dev`/`uat`/`prod` switch some built-in defaults, e.g. email lists):
 `ENV`, `HTTP_PORT`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_NAME`, `Recaptcha_Key`, `ProjectID`, `Base_Url`, `Backend_Doc`, `Backend_Auth`, `Backend_Core`, `Backend_File`, `Backend_Notification`, `Backend_Purchase`, `Backend_Premium`, `Backend_Saleforce`, `Url_Fontend` (typo is in the code), `SF_EndPoint`, `SF_ClientID`, `SF_ClientSecret`, `SF_UserName`, `SF_Password`, `Token_EKYC_Face_Recognition`, `Token_EKYC_Ocr`, `Token_YIP_PassportMRZ`, `URL_YIP_OCRService`, `URL_YIP_FaceRecogService`, `URL_YIP_Passport`, `URL_CMI_Realtime_Policy`, `URL_CMI_Realtime_Policy_Endorse`, `Url_IIA`, `URL_Eikonnex_Ocr_Book`, `Token_Car_Registration_Book`, `URL_Eikonnex_Ocrservice_Driving`, `Token_Driving_License`, `GCS_BUCKET`, `KUBS_IP` (CIDR for `RestrictIPs`), `ENC_KEY`, `IV` (AES-256 lead-number encryption).
+DB pool (FX-02 (2026-09-24), read in `webserver/dbConnect.go`; unset / invalid / non-positive → default): `DB_MAX_OPEN_CONNS` (default `80`), `DB_MAX_IDLE_CONNS` (`10`), `DB_CONN_MAX_LIFETIME` (Go duration, `1h`), `DB_CONN_MAX_IDLE_TIME` (`30m`). Defaults equal the previous hard-coded values.
+FX-02 (2026-09-24): `helm/helm-prod.yaml` `Backend_Notification` now points in-cluster to `http://backend-notification-service:8080/api/v1/notification/` (was the public `https://api.insurverse.co.th/...` URL).
 Helm also sets `Backend_Analytics`, `Backend_Consent`, `Backend_Uam`, `YIP_EKCY` (not read by `Load_Env` — ⚠️ unverified whether used).
 
 Every variable has a **hard-coded fallback literal** in `constants/constant.go` when the env var is empty (see S1).
@@ -30,7 +33,7 @@ Every variable has a **hard-coded fallback literal** in `constants/constant.go` 
 
 | Target | Method + path | Caller |
 |---|---|---|
-| Internal notification | `POST {Backend_Notification}email` · `sms` · `push_notification_id` | OTP / register / reset / AMLO alert / claim SMS / point notification |
+| Internal notification | `POST {Backend_Notification}email` · `sms` · `push_notification_id` | OTP / register / reset / AMLO alert / claim SMS / point notification. FX-02 (2026-09-24): shared HTTP client with a **30 s timeout** (was no timeout). |
 | Internal auth | `POST {Backend_Auth}login_sso` (body `{email}`) → returns login tokens | `registeraccount_sso` |
 | Internal document | `GET {Backend_Doc}policy/{policyNo}` | `create_policy_form` (`SendPolicyNo`) |
 | Internal purchase | `POST {Base_Url_Purchase}update-sf-payment` (`Backend_Purchase_SF_Update`) | `create_policy_form`, `job_update_sfpolicy` |
@@ -223,7 +226,14 @@ Tx: `INSERT sec_user` (bcrypt hash, `email_verified`), `INSERT user_confirm`. **
 
 ### 16. `POST /api/v1/uam/registeraccount_email_auto`
 **Body** (`RegisterAuto`): `first_name`*, `last_name`*, `email`*, `mobile`, `occupation`, `occupation_code`.
-If email exists → updates name fields only. Else generates an 8-char password, `INSERT sec_user` (bcrypt), emails the **plain password** + reset link (`Url_Fontend`). **200** `JsonReturn`; 500. No auth, no rate limit (S10).
+If email exists → updates name fields only. Else generates an 8-char password, `INSERT sec_user` (bcrypt), emails the **plain password** + reset link (`Url_Fontend`). No auth, no rate limit (S10).
+
+**Responses — FX-02 (2026-09-24):**
+- Email already exists → **200** `{ "title": "Email already exists", "status": 200, "result": { "is_new_account": false, "email": "<email>" } }` (was **500**).
+- New account created → **200** `{ "title": "Success Auto Registed", "status": 200, "result": { "is_new_account": true, "email": "<email>" } }` (was `result: {}`).
+- 500 on DB / mail errors.
+
+Frontend (`nextjs-webapp`) shows the "account created" dialog only when `status == 200` and `result.is_new_account !== false`.
 
 ### 17. `POST /api/v1/uam/registeraccount_sso`
 **Body** (`Register_SSO`)
@@ -307,7 +317,23 @@ Called by the frontend after payment (and by purchase service for renewal). **No
 **Body:** `{ id* }` (policy no / car ACT no). Builds SF payloads (`CreatePolicyPure` / `CreatePolicyAct`: reads `Policy_Header`, `Policy_coverage_premium`, `Policy_Car_Act_Discount_Premium`, participants, TQM tables; `fn_check_sf_account`) → SF `upsertaccount` + `upsertpolicy` (or TQM variant) → `UPDATE policy_participant`, `log_sf_policy`. Response `JsonReturn_SF`.
 
 ### 33–34. CMI realtime
-**Body** (`CMIRealtimeService`): `{ id* (car_act_no), type }` (`type` e.g. `new`/`can` ⚠️). Calls OIC CMI; `UPDATE Policy_Car_Act_Discount_Premium` (CMI result fields); `log_cmi_realtime`. **200** `{result: <CMI response>}`; CMI rejection → `{title:"CMI ERROR", result}` (status ⚠️); 500. Endorse variant reads `Policy_endorse_detail`, `mas_cmi_*`, `company_detail`, `tqm_lead_cmi`.
+**Body** (`CMIRealtimeService`): `{ id* (car_act_no), type }` (`type` e.g. `new`/`can` ⚠️). Calls OIC CMI; `UPDATE Policy_Car_Act_Discount_Premium` (CMI result fields); `log_cmi_realtime`. **200** `{result: <CMI response>}`; any `CMI_Realtime` / `CMI_Realtime_Endorse` failure → **400** `{title: cmiFailureTitle(err), status:400, result:{}}` (on a CMI rejection that still returned reference/receive numbers, the numbers are saved first); 400 on bind/validate; 500 on DB errors. Endorse variant reads `Policy_endorse_detail`, `mas_cmi_*`, `company_detail`, `tqm_lead_cmi`.
+
+Failure titles by `cmiStage` (`CMIError.Title()`): `lookup` → "ไม่พบข้อมูลกรมธรรม์ในระบบ", `call` → "เรียกระบบ CMI ไม่สำเร็จ", `decode` → "อ่านคำตอบจากระบบ CMI ไม่ได้", `rejected` → "CMI ปฏิเสธรายการ : <reason>", **`invalid` (new, FX-02)** → "ข้อมูลไม่ครบตามข้อกำหนด คปภ. : <reason>".
+
+**FX-02 (2026-09-24) — pre-send OIC validation (`controllers/cmi_validate.go` `validateCMIRow`)**, applied to both policy (`CMI_Realtime`, also used by `create_policy_form`) and endorse. A record failing any rule is **not sent** to CMI; the row is logged via `Log_CMI` (`log_cmi_realtime`) and the handler answers 400 with stage `invalid`; `<reason>` lists every problem joined by `; `. Nothing is trimmed or filled in. Same rules as `go-fiber-policy-service`.
+
+| Field | Rule |
+|---|---|
+| `contractDt`, `effectiveDt`, `endDt` | not blank, valid `yyyymmdd` date |
+| `vehicleTypeCode` | not blank, ≤ 5 chars |
+| `registeredProvinceCode` | not blank, ≤ 2 chars |
+| `plateNumber` | not blank, ≤ 20 chars |
+| `chassisVINNumber` | not blank, ≤ 50 chars |
+
+Endorse only: if the main policy has no CMI `ReferenceNumber` → not sent, stage `invalid`, reason `main policy has no CMI reference number` (OIC 2BUS0227).
+
+Payload query changes (FX-02): `agentBrokerLicenseNumber` = `'ว00019/2546'` when `car_act.partner_code` is `TQM` (case-insensitive), else `company_detail.regist_id` — in both the policy query (`q1`) and the endorse query (`q2_cmi_realtime_endorse`). Endorse `contractDt` is capped at the policy start date (`car_act."Start_date"` +7h, `yyyymmdd`) when later (OIC 2BUS0004); a NULL contract date stays NULL.
 
 ### 35, 37. IIA (SOAP)
 `iia_act_service` (`IIA_Act_F {id*, type}`) → `SendIiaPolicy_Act(id)` → `200 {title:"IIA Act Success", result:{…}}`; failure → title from `iiaFailureTitle`. `rush_iia` (`{id*, type}`; `type != "act"` → policy) → `SendIiaPolicy` / `SendIiaPolicy_Act`. DB (payload build): `Policy_Header`, `Policy_coverage_premium`, `Policy_Car_Act_Discount_Premium`, `payment`, `payment_act`, `promo_code_trans`, `mas_partner`, `mas_cmi_color`, `sys_param`, geo tables; fns `fn_address_clean_dist`, `fn_format_utc_timestamp`, `fn_policy_package_iia`, `fn_policy_usage_to_comp`, `fn_policy_comp_to_usage`; writes `log_iia_policy`.
@@ -346,6 +372,7 @@ Called by the frontend after payment (and by purchase service for renewal). **No
 
 ### 51–59. IIA auto-endorse `ry05` … `ry28`
 **Body** (`IIA_RY_F`): `{ id* }` (policy no; `MV-` prefix → motor query, else ACT query). Builds the RY payload from policy/endorse tables and posts to `{Url_IIA}ServiceAutoEndorse/api/import/ryN` (`HTTP_IIA_ENDORSE`); writes `log_iia_policy`. **200** `{result: IIA_RY_Result}`; 500 `{result:{error}}`.
+RY11 (cancel) does **not** change `Policy_Header."Policy_Status"` or `no_cancel_flag` (the WS6 `'C'` / `no_cancel_flag='Y'` update was removed 2026-09-24, `1458623`: `'C'` is not a known status — the cancel flow uses `'INC'`, e.g. `fn_update_point_cancel` — and `no_cancel_flag` means "may not be cancelled" and is sent to CMI). Pending business confirmation of the correct status.
 
 ### 60–64. YIP e-KYC (no sanitize)
 | Route | Body | Notes |
@@ -354,9 +381,11 @@ Called by the frontend after payment (and by purchase service for renewal). **No
 | `get_ocr_service` | `{ citizen_id*, lead_no*, lead_group_type*, first_name, last_name }` | `CustomOCR` read + blacklist |
 | `ocr_reader_service` | `{ imgsource* (base64), side, citizen_id, Return_portrait_* flags }` | Proxy to YIP OCR |
 | `facerecog_service` | `{ trans_id, imgsource*, imgtarget* }` | Proxy to YIP face; threshold from `sys_param` |
-| `ocr_passport_reader_service` | `PassportMRZ_F { trans_id, … }` | Proxy to YIP MRZ; `log_yipinsoi` |
+| `ocr_passport_reader_service` | `PassportMRZ_F { trans_id, … }` | Proxy to YIP MRZ; `log_yipinsoi`. FX-02 (2026-09-24): provider failure → **500** `{title:"OCR service unavailable", status:500, description:"Passport OCR could not be read, please enter the details manually"}` (was empty `JsonReturn{}`); the `status` in the provider reply is read as int or float64, so the handler no longer panics. |
 
 ### 65. `upsert_account` — body `UpsertAccount { accountID, accountType, leadId, salutation, firstname, lastname, birthdate, idNumber, idType, mobilePhone, email, street, city, state, country, postalCode, customerType, paymentStatus }` → SF `upsertaccount`.
+
+FX-02 (2026-09-24): in the policy-driven SF account payload (`query2_1_ct`, used by `CreatePolicyPure` / `UpsertPolicyService` from `create_policy_form` and `create_policy_pure`), `mobilePhone` = `Policy_Header."Owner_phone"`, falling back to `Policy_Header."phone"` (buyer) when blank, else `''`.
 
 ### 74. `job_update_sfpolicy` — `{ id* }` → `POST {Backend_Purchase_SF_Update}`.
 

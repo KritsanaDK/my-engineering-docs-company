@@ -3,6 +3,7 @@
 > Source: `/Users/kritsanawathaniyanon/Code/Go/isv-test` (Go module `service_isv_test`).
 > Despite the name, this **is** a deployed HTTP service (Echo) with ~90 routes, not a test harness. Generated from route registration (`main.go`, `router/router.go`, `router/initservice.go`) and handler → usecase/service → repository/model code. Swagger `docs/` was not used as a source of truth.
 > Spec date: 2026-09-23. Read-only analysis; nothing was executed.
+> FX-02 (2026-09-24): branch `fix/fx-02-isv-test` — WordPress short-link User-Agent, endpoint building, 10 s timeout on `POST /short_link`.
 
 ---
 
@@ -40,7 +41,7 @@ Several of these have **non-empty literal fallbacks** in `constant/config.go`, a
 | Policy SOAP (`POLICY_SERVICE_URL`) | CheckPolicyData | `policy/pdf` |
 | OIC CMI (`CMIPolicyAPIEnv`) | `POST` with security header | `cmi_policy` |
 | IIA BigQuery API | `https://thumb--d…/API_IIA_Bigquery/*` (hard-coded) | `proxy/*`, `POST /test` |
-| WordPress | short-link endpoint (`WORDPRESS_API_URL`) | `short_link`, renewal links |
+| WordPress | short-link endpoint (`WORDPRESS_API_URL`) → `POST <base>/wp-json/url-shortify/v1/links`. FX-02 (2026-09-24): endpoint built by `util.ShortLinkEndpoint` (base = part before `/wp-json`, trailing `/` trimmed → no `//wp-json`); every short-link call (create + resolve) sends `User-Agent: Insurverse-Backend-Service/1.0` (the Cloudflare WAF blocks the default Go agent) | `short_link`, renewal links, Shopee form links |
 | Meta CAPI | `META_CAPI_URL` (pixel, token) | `facebook/capi/send_event` |
 
 ---
@@ -204,7 +205,7 @@ Basic-auth promo reports build XLSX from `promo_code_trans`, `promo_code`, `Lead
 - `check_date_limit` (`{ fn, data }`) → `mas_limite_purchase WHERE period_name='MV-MC'` → `{ allowed/limit date }` ⚠️.
 - `log-request/*` (any method) → logs body, returns `{message, path}`.
 - `cmi_policy` (Basic, `structs.CMIPolicyRequest`: `companyCode, policyNumber, contractDt, effectiveDt, endDt, vehicleTypeCode, registeredProvinceCode, plateNumber, chassisVINNumber, insuredUniqueID, insuredName, insuredSurname, country, agentBrokerLicenseNumber, vehicleColor, vehicleBrandName, vehicleModelName`) → brand/model lookup in `mas_cmi_brand_model` → `POST CMIPolicyAPIEnv` with security header → `JsonReturn`.
-- `short_link` `{ url }` → WordPress short link.
+- `short_link` `{ url }` → WordPress short link. FX-02 (2026-09-24): outbound call has a **10 s timeout** (was none) and the new User-Agent / endpoint rules above.
 
 ### 55. `POST /shopee/callback`
 Shopee push (order status). No signature / `Authorization` HMAC verification found (S5). Writes `callback_logs`; for ready orders fetches order detail + buyer invoice info, builds a form link (`short_link_mapping`) and sends SMS.

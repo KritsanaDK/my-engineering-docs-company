@@ -2,6 +2,7 @@
 
 Source: `/Users/kritsanawathaniyanon/Code/NextJs/nextjs-webapp` (package name `insurverse`, v0.1.0)
 Generated: 2026-09-23 by static read of source only (nothing built or run). Items marked ⚠️ are inferred / not verified.
+FX-02 (2026-09-24): auto-register dialog condition (`isNewAccount`), see the `registeraccount_email_auto` row.
 
 ---
 
@@ -221,7 +222,7 @@ Target service is inferred from the path prefix and from grepping `/Users/kritsa
 | Current user (global) | POST | /api/v1/uam/get_user | uam | `{id}` → `UserData` |
 | Register | POST | /api/v1/uam/registeraccount_email | uam | `RegisterData` |
 | Register (SSO/Firebase) | POST | /api/v1/uam/registeraccount_sso | uam | `SSOData` (useSSOService) |
-| Auto-create account in shopping | POST | /api/v1/uam/registeraccount_email_auto | uam | (usePremiumShoppingService.useCreateAccountMutation) |
+| Auto-create account in shopping | POST | /api/v1/uam/registeraccount_email_auto | uam | (usePremiumShoppingService.useCreateAccountMutation). FX-02 (2026-09-24): response `result:{is_new_account, email}`; existing e-mail now 200 with `is_new_account:false` (was 500). The "account created" dialog opens only when `isNewAccount(data)` (`status === 200 && result.is_new_account !== false`, `src/services/premium-service/usePremiumShoppingService.ts`) — 8 call sites: `ActBasicInsuranceForm`, `CardInsurance`, `FormPayment`, partner travel / home / personal-accident / travel / travel_discard `fullfillment`; otherwise the existing no-dialog path runs (next page / `goNextPage()`; travel: `router.push(gobackurl)`). Older UAM (500) still goes through each caller's `onError`. Branch `fix/fx-02-nextjs-webapp`. |
 | Register / purchase OTP | POST | /api/v1/uam/validate_email, validate_email_otp, validate_phone, validate_phone_otp | uam | ValidateEmailData / ValidateEmailOTPData / ValidatePhoneData |
 | Forgot / new password | POST | /api/v1/uam/forget_password, update_password, check_update_password | uam | ForgotPasswordData / NewPasswordData / CheckUpdatePassword |
 | Profile edit | POST | /api/v1/uam/update_profile_name, update_profile_dob, update_profile_phone | uam | UpdateProfile*Data |

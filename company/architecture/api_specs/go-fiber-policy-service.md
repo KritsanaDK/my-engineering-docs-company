@@ -3,6 +3,7 @@
 > Source: `/Users/kritsanawathaniyanon/Code/Go/go-fiber-policy-service` (Go module `policy-tiptanjai-service`).
 > Generated from route registration (`internal/server/server.go`, `internal/handler/router.go`) and handler → service → repository code. The repo's own `CLAUDE.md` and swagger `docs/` were used only as hints; every item below was checked in code.
 > Spec date: 2026-09-23. Read-only analysis; nothing was executed.
+> FX-02 (2026-09-24): `GET /tqm/cmi` pre-CMI 7-field validation (branch `fix/fx-02-fiber-policy`), see #8.
 
 ---
 
@@ -118,6 +119,18 @@ Same lock pattern (`/policy/tqm/vmi/ftp`). Reads documented leads + `Policy_Head
 
 ### 8. `GET /tqm/cmi` — ACT issue batch
 Lock `/policy/tqm/cmi`. `ListIssueCMIPolicy` → SF auth → per item: validate → `DATA_PROBLEM` or: SF `upsertleadcmi` → **OIC CMI realtime** (`SendCMIRealTime`: `UPDATE Policy_Car_Act_Discount_Premium` CMI fields + `IIA_Lot_No = fn_policy_lotno_iia()`, `INSERT log_cmi_realtime`) → `sendIiaPolicyACT` → status `SUCCESS` → SF `upsertpolicy`. Always `200`.
+
+**FX-02 (2026-09-24) — pre-CMI validation** (`internal/service/cmi_validate.go` `validateCMIRealtime`, called in `SendCMIRealTime` before the OIC call). Checks OIC's 7 mandatory fields; nothing is trimmed or filled in:
+
+| Field | Rule |
+|---|---|
+| `contractDt`, `effectiveDt`, `endDt` | not blank, valid `yyyymmdd` |
+| `vehicleTypeCode` | not blank, ≤ 5 chars |
+| `registeredProvinceCode` | not blank, ≤ 2 chars |
+| `plateNumber` | not blank, ≤ 20 chars |
+| `chassisVINNumber` | not blank, ≤ 50 chars |
+
+A failing record is **not sent** to CMI. `INSERT log_cmi_realtime` with `response_status = 422`, `remark = "not sent to CMI: <problem>; <problem>…"`, response body = a CMI-shaped reply (`title:"Not sent to CMI"`, `Result.Result:"FAIL"`, one `Errors[]` entry per problem with `ErrorCode:"PRE-CMI"`). The item follows the existing CMI-failure path: `tqm_request_status` → `DATA_PROBLEM` (type `CMI`) and the TQM data-problem notification detail lists the `PRE-CMI` errors. No IIA / SF policy calls for that item. Same rules as `go-echo-uam-service` CMI realtime.
 
 ### 11. `POST /tqm/upload-policy`
 **Body** (`model.UploadPolicySFTP`)

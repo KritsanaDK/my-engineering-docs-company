@@ -12,7 +12,7 @@
 | Port | `HTTP_PORT` (default `8080`) |
 | Base path | `/api/v1/analytics` (`router.GenApiVersion`, `router/router.go:32`; `ApiVersion = "v1"`) |
 | Data store | Google BigQuery only. There is no PostgreSQL connection. The client is created in `webserver/bigqueryConnect.go:20` with the credentials file `key.json` in the working directory. |
-| Graceful shutdown | On SIGTERM: wait 10s, then `e.Shutdown` with a 15s timeout (`main.go:44-52`), so the pod can leave the load balancer's network endpoint group (NEG) before exiting. |
+| Graceful shutdown | On SIGTERM: wait 10s, then `e.Shutdown` with a 15s timeout (`main.go:44-52`), so the pod can leave the load balancer's network endpoint group (NEG) before exiting. FX-02 (2026-09-24): added on branch `fix/fx-02-analytics`. |
 | Background jobs | None |
 
 ### Environment variables (names only)

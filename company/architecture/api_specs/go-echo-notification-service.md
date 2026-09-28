@@ -3,6 +3,7 @@
 > Source: `/Users/kritsanawathaniyanon/Code/Go/go-echo-notification-service` (Go module `service_notification`).
 > Generated from route registration in `router/router.go` and `main.go`, followed into each handler. All line numbers refer to the working copy as read on 2026-09-23.
 > Table/function existence was cross-checked read-only against the **UAT-ISV** database (`information_schema.tables`, `pg_proc`). No other environment was queried.
+> FX-02 (2026-09-24): branch `fix/fx-02-notification` — `get_noti_policy_expire` fully background (#23), SMTP extra headers (#12).
 
 ---
 
@@ -292,6 +293,7 @@ Prefix `{N}` = `/api/v1/notification`.
 | `attach[]` | object[] | no | `filebase64` must contain exactly one `,` (data-URI form) or the attachment is skipped silently |
 
 - `EMAIL_BCC` added as Bcc when set.
+- FX-02 (2026-09-24): `SendEmailSMTP` (all SMTP-relay callers, not only this route) adds headers `Reply-To` (= resolved sender address, when non-empty), `Message-ID` (`<unixnano.n@insurverse.co.th>`), `MIME-Version: 1.0`, `X-Priority: 3`, so providers are less likely to file the mail as junk. No request/response change.
 - Success `200`: `{"title":"Success","status":0,"description":"","result":""}`
 - Errors: `400` JsonReturn `Bad Request` with `result` = read error / `"invalid json body"` / unmarshal error; `400` `{"title":"Unsuccess","status":400,...}` when SMTP send fails (stops at first failing recipient).
 - DB: none. Outbound: SMTP.
@@ -408,7 +410,8 @@ Prefix `{N}` = `/api/v1/notification`.
 - Outbound: SMTP.
 
 ### 23. POST `{N}/get_noti_policy_expire`
-- Purpose: legacy policy-expiry notification job. Returns immediately; work runs in a background goroutine (15-minute timeout, concurrency 50). Guarded by an in-process mutex flag (per pod only).
+- Purpose: legacy policy-expiry notification job. Returns immediately; work runs in a background goroutine (concurrency 50). Guarded by an in-process mutex flag (per pod only); the flag is reset (and panics recovered) when the worker ends.
+- FX-02 (2026-09-24): the two stored-function queries now run **inside** the background goroutine (before, they ran in the request and the reply carried `notifications_found`). The response no longer has `notifications_found`. A second call while a run is in progress answers `already_running` instead of starting another run. The sending budget is **10 minutes, starting after the queries finish** (no send phase when 0 rows).
 - Request body: not read.
 - Success `200` (started):
 
@@ -605,7 +608,7 @@ No cron library, ticker loop, queue consumer, or scheduler is started from `main
 |---|---|---|---|
 | Renewal prep (`POST /renewal/prep`) | async goroutine, tracked in `batch_jobs` | Builds renewal notification rows for email days / SMS days configured in `renewal_template` (comment in router: email 90/60/30, sms 15/7/3/0) | `batch_jobs`, `renewal_template`, policy/lead tables, `promo_code_trans`, `sec_user`, `province`, `renewal_notification`; calls isv-test service |
 | Renewal dispatch (`POST /renewal/dispatch`) | async goroutine, worker pool + rate limiter, tracked in `batch_jobs` | Sends PENDING rows via ThaiBulk; summary e-mail | `batch_jobs`, `renewal_notification`, `renewal_template`, `thaibulk_configs` |
-| Legacy policy expiry (`POST /get_noti_policy_expire`) | async goroutine, 15-min timeout, per-pod mutex | Calls stored functions, marks `log_noti_renewal.noti_email_at`; sending is commented out | `fn_policy_renewal_noti`, `fn_policy_renewal_noti_log`, `log_noti_renewal` |
+| Legacy policy expiry (`POST /get_noti_policy_expire`) | async goroutine (queries + send), 10-min send budget after the queries, per-pod mutex (`already_running` on overlap) — FX-02 (2026-09-24) | Calls stored functions, marks `log_noti_renewal.noti_email_at`; sending is commented out | `fn_policy_renewal_noti`, `fn_policy_renewal_noti_log`, `log_noti_renewal` |
 | Queue processor (`POST /queue/process`) | synchronous, 10 + 10 items per call | Sends queued e-mail/SMS with retry bookkeeping | `notification_queue`, `notification_templates_extended`, `thaibulk_templates`, `log_api_thaibulk`, `log_thaibulk_send` |
 | Car inspection reminder (`GET /:type/inspection/:day`) | handler + per-row goroutines | SMS (day 3) / e-mail (day 7) | `Policy_Header`, `sec_user`, `log_noti_renewal` |
 | Paid-but-no-policy SMS (`GET /sms/policy`) | per-row goroutines | SMS 2 days after payment | `Lead_coverage_premium`, `Policy_coverage_premium`, `sec_user` |

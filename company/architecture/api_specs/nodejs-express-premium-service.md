@@ -240,7 +240,10 @@ Returns `{}` with HTTP 200.
 
 **201:** `data` = `{ Lead_No (encrypted), Type, SI, GarageType, SI_Access, SI_MV01..03, SI_TPBI, SI_TPPD, Premium, CCTV_Discount, Flag_CCTV, Flag_Car_Act, Email, Mobile, FirstName, LastName, Access_para_code, YOB_Driver_1/2, Driver_Discount, driver_behavior_i, par_citizen_id_i, par_driver_license_no_i, par_driver_license_category_i, driver_behavior_consent_i, sc_premium_amt_i, sc_premium_amt_ans, prem_version, driver_behavior, driver_behavior_cal, … }`
 **Errors (400):** Joi `error.details`, `CheckSum Fail`, `Driver N requires Citizen id, Driver License and Consent`, `Citizen, License Id and Consent should not have value without driver N`, `Failed to create lead`.
-**DB:** R `Policy_coverage_premium` JOIN `Policy_Header`, R `sys_param`, R `Imp_Price_Premium` (car price), W `INSERT Lead_coverage_premium … RETURNING "Lead_No"` (the Lead_No default comes from `insurverse.seq_lead_no`, and a client-sent `Lead_No` is dropped). Column names come from the payload keys but are filtered with `/^[A-Za-z_][A-Za-z0-9_]*$/`.
+**DB:** R `Policy_coverage_premium` JOIN `Policy_Header`, R `sys_param`, R `Imp_Price_Premium` (car price), W `INSERT Lead_coverage_premium … RETURNING "Lead_No"`. Column names come from the payload keys but are filtered with `/^[A-Za-z_][A-Za-z0-9_]*$/`.
+
+**Lead_No generation — FX-02 (2026-09-24), branch `fix/fx-02-premium` (no contract change):** `INSERT INTO "Lead_coverage_premium" (...) SELECT CASE WHEN MAX("Lead_No") > 0 THEN MAX("Lead_No")+1 ELSE 1 END, ... FROM "Lead_coverage_premium" RETURNING "Lead_No"`. The returned `Lead_No` is this request's own row (before, a separate `SELECT MAX("Lead_No")` after the insert could return another customer's lead under load). On a primary-key clash (`23505`, two concurrent inserts computing the same MAX+1) the insert is retried up to 5 attempts in total with a 20–100 ms random wait (`insertLeadRetryingLeadNo`); after the last attempt, or on any other DB error, the error is thrown to the existing error handling (unchanged).
+Note: the `uat-isv` working copy (FX-01 line) instead takes the `Lead_No` default from `insurverse.seq_lead_no` and drops a client-sent `Lead_No`; that variant is not on `fix/fx-02-premium`.
 
 ### 9. `fn=checkTariff`
 **data:** same fields as #8, plus `Purchase_Date` and optional `promocodePercen`.

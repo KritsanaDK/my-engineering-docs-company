@@ -3,6 +3,7 @@
 > Source: `/Users/kritsanawathaniyanon/Code/Go/go-echo-lead-policy-service` (Go module name `go-echo-backoffice-isv`).
 > Generated from route registration code (`router/router.go`) → controllers → services → repositories. No swagger docs are generated (the `/swagger/*` route is commented out in `cmd/main.go:51`).
 > Every table/column listed here comes from SQL text in the repositories. None of it was checked against a live schema (⚠️ run a Rule 6 check before any change).
+> FX-02 (2026-09-24): updated from branch `fix/fx-02-lead-policy` — CMI endorse/resubmit main-policy guard, endorse `contract_dt` / act join, non-JSON downstream errors, in-cluster `EMAIL_URL` (helm-prod), Keycloak nil-client guard.
 
 ---
 
@@ -43,6 +44,11 @@
 | Salesforce change-email (MV / MC) | `CHANGE_MV_EMAIL_SALESFORCE_URL`, `CHANGE_MC_EMAIL_SALESFORCE_URL` | `PUT user/email` | `utils.HTTP` POST `{id}` |
 | Google Cloud Storage | `GCS_BUCKET`, `CONDITION_LEVEL_3_*`, plus buckets parsed from document URLs | `POST leadpolicy/email`, `POST endorsement/email` | GCS client |
 | Public media CDN (hard-coded `https://media.insurverse.co.th/...` emergency-service PDF) | none (hard-coded) | `POST leadpolicy/email` (Class 3 / 2+ new policies) | `http.Get` |
+
+FX-02 (2026-09-24):
+- `utils.HTTP` reads the whole body; when the downstream reply is not JSON (e.g. a gateway/WAF HTML error page) it returns the error `HTTP <status> non-JSON response from <url>: <first 200 chars>...` instead of the bare `invalid character '<'` decode error. The caller's HTTP status to the client is unchanged.
+- `helm/helm-prod.yaml` `EMAIL_URL` now points in-cluster to `http://backend-notification-service:8080/api/v1/notification/email` (was the public `https://api.insurverse.co.th/...` URL).
+- `utils.GetUserByRole` returns the error `keycloak client is not connected` when the Keycloak client is nil (Keycloak unreachable at startup) instead of panicking; callers (CMI submit/resubmit/endorse e-mail recipients, change email/password alerts) answer 500.
 
 ---
 
@@ -404,7 +410,7 @@ CMI outbound payload (JSON keys): `companyCode, policyNumber, contractDt, effect
 | policyNo | string | yes | `required` |
 | endorseNo | string | no | when set, uses the endorse payload and `CMI_ENDORSE_URL` |
 | remark | string | no | |
-| referenceNo / receiveNo | string | no | override values for the endorse payload. Both must end up non-empty, else 400 `main policy must be submitted to CMI first ...` |
+| referenceNo / receiveNo | string | no | endorse resubmit only. FX-02 (2026-09-24): the main policy's stored CMI numbers are **kept** unless a non-empty value is sent (an empty string no longer blanks them). Both must end up non-empty, else **400** `main policy must be submitted to CMI first (reference_no / receive_no is empty)` and nothing is sent to CMI |
 
 Flow: same as #18, plus `UPDATE log_cmi_realtime SET remark = <response JSON> WHERE id = :id`. The activity log type is 6 `CMI_RESUBMIT` with detail `cmi_record_id=<id>,new_cmi_record_id=<newId>`. The e-mail template is `RESUBMIT_CMI_EMAIL_TEMPLATE`.
 DB: `Policy_Car_Act_Discount_Premium`, `Policy_endorse_detail`, `company_detail`, `mas_cmi_*`, `log_cmi_realtime` (R/W), `log_activity(_ref)`.
@@ -415,7 +421,11 @@ Errors: 400, 404, 500.
 { "endorseNo": "SFPOLICYID0001", "remark": "endorse" }
 ```
 Validation: **none** (the handler does not call the validator). An empty `endorseNo` returns 404 `Invalid Parameter endorseNo`.
-The endorse number is `Policy_endorse_detail.SF_Policy_id`. Flow is like #18 using `CMI_ENDORSE_URL` and template `ENDORSE_CMI_EMAIL_TEMPLATE`. `EndorseFlag` = `X` when `doc_type='v0_11'`, else `U`. The main policy must already have `cmi_reference_number`/`cmi_receive_number`, else 400.
+The endorse number is `Policy_endorse_detail.SF_Policy_id`. Flow is like #18 using `CMI_ENDORSE_URL` and template `ENDORSE_CMI_EMAIL_TEMPLATE`. `EndorseFlag` = `X` when `doc_type='v0_11'`, else `U`. The main policy must already have `cmi_reference_number`/`cmi_receive_number`, else **400** `main policy must be submitted to CMI first (reference_no / receive_no is empty)` and nothing is sent (FX-02 (2026-09-24), OIC 2BUS0215/2BUS0017).
+
+Endorse payload query (`GetDataForEndorseCMI`, also used by resubmit with `endorseNo`) — FX-02 (2026-09-24):
+- `contract_dt` = the earlier of `Policy_endorse_detail.create_at` and `effective_date` (+7h, `yyyymmdd`); CMI rejects a contract date after the effective date (OIC 2BUS0004).
+- Act join: `endorse."Car_Act_No" = car_act."Car_Act_No"`, **or**, only when the endorsement's `Car_Act_No` is empty/NULL, `endorse."Policy_No" = car_act."Policy_No"`.
 The activity log type is 7 (`CMI_SUBMIT`).
 
 #### 21. `GET {base}/cmi/resubmit`: preview CMI payload
