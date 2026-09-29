@@ -5,3 +5,8 @@ terraform-provider-*
 *.tar.gz
 skills_backup/
 *.dump
+
+# Secrets stay out of git (carried manually on machine migration)
+company/infrastructure/env/*.env
+*.tfstate
+*.tfstate.backup

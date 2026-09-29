@@ -24,19 +24,21 @@ This document defines the engineering standards, operational constraints, and be
 ### 📌 Rule 5: Machine Sync by Profile — Company vs Personal (สำรอง/ย้ายเครื่องแยกตาม profile)
 - **Two machine profiles** (`~/.gemini/sync_profile`): **company** machine = company work only; **personal** machine = personal work. Never put personal projects or `my-keystores` on the company machine.
 
-  | Profile | Repos on the machine | Skills linked |
+  | Profile | Repos on the machine (→ local path) | Skills linked |
   |---|---|---|
-  | `company` | `my-engineering-skills` (`~/.gemini/config`), `my-engineering-docs` (`~/Code/docs`) | `skills/company` |
-  | `personal` | the two above + `my-keystores` (`~/.keystores`) | `skills/personal` |
+  | `company` | `my-engineering-skills-company` (→ `~/.gemini/config`), `my-engineering-docs-company` (→ `~/Code/docs`) | `skills/company` |
+  | `personal` | `my-engineering-skills` (→ `~/.gemini/config`), `my-engineering-docs` (→ `~/Code/docs`), `my-keystores` (→ `~/.keystores`) | `skills/personal` |
+
+  Company and personal material live in **separate repos**; each machine clones only its own side, to the same local paths.
 
 - **When asked to backup/sync/prepare a migration** (`sync backup`, `backup ย้ายเครื่อง`), the AI agent MUST:
   1. *(company)* Mirror `~/Code/Go/deploy_jobs/` → `~/Code/docs/company/releases/deploy_jobs/` and `~/worklogs/` → `~/Code/docs/company/worklogs/`; never commit DB dumps (`*.dump`) or `.env` files.
   2. Push the profile's repos to GitHub `origin main` and verify each reports `working tree clean`, with a commit summary.
   3. Run `~/.gemini/config/scripts/sync_ai_config.sh --profile <company|personal>`.
   4. Remind that git-ignored data is NOT in any repo and must be carried manually: Claude memory (`~/.gemini/config/memory/`), `.env*` secrets, `uat_isv.env`, DB dumps.
-- **New machine**: `~/.gemini/config/scripts/setup-multi-ai.sh --init-machine <company|personal>` (guide: `~/Code/docs/personal/reports/NEW_MACHINE_MIGRATION_GUIDE.md`).
-- **Folder split**: skills in `skills/{company,personal}/`, docs in `~/Code/docs/{company,personal}/` — put new material in the matching folder (no shared group: each skill belongs to one side).
-- **Skills Live Only Here**: Custom skills exist ONLY in the `my-engineering-skills` repo and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
+- **New machine**: `~/.gemini/config/scripts/setup-multi-ai.sh --init-machine <company|personal>` (full guide: `NEW_MACHINE_MIGRATION_GUIDE.md` in the personal docs repo).
+- **Folder split**: company repos keep `skills/company/` and `~/Code/docs/company/`; personal repos keep `skills/personal/` and `~/Code/docs/personal/` — put new material in the matching repo and folder (no shared group: each skill belongs to one side).
+- **Skills Live Only Here**: Custom skills exist ONLY in the profile's skills repo (`my-engineering-skills-company` or `my-engineering-skills`) and its local clone `~/.gemini/config/skills/`. AI tool folders (`~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, …) may contain only symlinks to that clone — never copies. Never place skills inside project folders or project repos.
 - **Never Upload Skills or Rules to External Services**: The AI agent MUST NEVER upload, import, or suggest uploading custom skills, AGENTS.md, or memory to any external cloud skill marketplaces.
 
 ### 📌 Rule 6: Safe Git Operations & Explicit Branching (แตก Branch จาก origin/main และใช้ --no-track เสมอ)
@@ -65,22 +67,3 @@ This document defines the engineering standards, operational constraints, and be
 - **Rule I-6: Mandatory Spec Sync**: Always update API specs in `~/Code/docs/company/architecture/api_specs/` whenever endpoints, handlers, DTOs, or DB tables change.
 - **Rule I-7: Environment Scope & Safety**: Act ONLY on **UAT-ISV** (`136.85.102.224`). NEVER touch UAT or Production. E2E payments via real 2C2P sandbox links. Never trigger CI for `nextjs-backoffice-webapp`.
 
----
-
-## 💻 PART C: Personal & Independent SaaS Rules (งานส่วนตัว)
-
-### 📋 ImmiSync SaaS (`~/Code/immisync`)
-> **Full Spec:** Read [`rules/immisync_rules.md`](rules/immisync_rules.md) and skill `immisync-operations`.
-> **Identity:** KritsanaDK (`kritsana.dk@gmail.com`)
-- Enforce mandatory Primary Tenant Owner with randomized passwords and clipboard copy.
-- Enforce standardized 8-field Thai address with office address inheritance toggle.
-- Maintain foreign labor compliance document integrity (Passport, Visa, Work Permit, Pink Card, TM30, TM47) with ID reuse on upsert.
-- White-label LINE Official Account Messaging API integration per tenant.
-- Direct push to personal GitHub (`KritsanaDK/*`) `main` is permitted when requested by the owner.
-
-### 📱 Mobile & Flutter (`~/Code/Flutter/*`)
-> **Full Spec:** Read [`rules/mobile_flutter_rules.md`](rules/mobile_flutter_rules.md) and skill `wvocs-flutter-operations`.
-> **Identity:** KritsanaDK (`kritsana.dk@gmail.com`)
-- Strict OpenJDK 17 LTS toolchain for Flutter/Gradle builds.
-- Automated versioning and build management with `./build.sh`.
-- Clean architecture: decouple UI overlays from Providers.
